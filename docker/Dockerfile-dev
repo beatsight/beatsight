@@ -1,0 +1,19 @@
+FROM python:3.9.6-slim-buster
+MAINTAINER xiez1989@gmail.com
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+USER 0
+
+WORKDIR /Users/xiez/dev/beatsight
+
+COPY requirements.txt requirements.txt
+COPY requirements-dev.txt requirements-dev.txt
+
+RUN pip install --ignore-installed -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements-dev.txt
+
+
+EXPOSE 22/tcp 80/tcp 8080/tcp
+
+

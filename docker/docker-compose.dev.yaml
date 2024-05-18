@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  app:
+    container_name: beatsight_dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-dev
+    image: beatsight:dev
+    entrypoint: ["tail", "-f", "/dev/null"]
+    # entrypoint: ["python3", "webapp.py"]
+    # environment:
+    #   - STAGE=development
+    #   - FLASK_ENV=development
+    volumes:
+      - ..:/Users/xiez/dev/beatsight
+      - ../../seahub:/seahub
+      - ../../../dev/17zuoye/bank:/bank
+      - ../../../dev/17zuoye/ferrum:/ferrum
+      - ../../../dev/17zuoye/gemserver:/gemserver
+      - ../../../dev/17zuoye/question-bank:/question-bank
+      - ../../../dev/17zuoye/aquarius:/aquarius
+
+    ports:
+      - "8081:8081"
+    networks:
+      - beatsight-main
+
+networks:
+  beatsight-main:
+    driver: bridge      
+      
