@@ -6,6 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE 1
 
 USER 0
 
+RUN apt-get update -y
+RUN apt-get install -y build-essential gcc
+
 WORKDIR /Users/xiez/dev/beatsight
 
 COPY requirements.txt requirements.txt
@@ -13,6 +16,11 @@ COPY requirements-dev.txt requirements-dev.txt
 
 RUN pip install --ignore-installed -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements-dev.txt
 
+RUN mkdir vendor
+COPY vendor/repostat/requirements.txt vendor/requirements.txt
+COPY vendor/repostat/requirements-dev.txt vendor/requirements-dev.txt
+
+RUN apt-get install -y git
 
 EXPOSE 22/tcp 80/tcp 8080/tcp
 

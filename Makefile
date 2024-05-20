@@ -1,3 +1,25 @@
+REPOSTAT=/Users/xiez/dev/beatsight/vendor/repostat/
+
+run:
+	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py runserver 0.0.0.0:8081
+
+shell:
+	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py shell
+
+dbchange:
+	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py makemigrations
+
+dbapply:
+	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py migrate
+
+pull:
+	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py pull
+
+clean:
+	rm -rf db.sqlite3 && \
+	find . -path "*/migrations/*.py" -not -name "__init__.py" -delete && \
+	find . -path "*/migrations/*.pyc" -delete
+
 # ##################################################
 action:
 	@echo action $(filter-out $@,$(MAKECMDGOALS))

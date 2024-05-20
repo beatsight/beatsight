@@ -7,14 +7,13 @@ services:
       context: ..
       dockerfile: docker/Dockerfile-dev
     image: beatsight:dev
-    entrypoint: ["tail", "-f", "/dev/null"]
-    # entrypoint: ["python3", "webapp.py"]
-    # environment:
-    #   - STAGE=development
-    #   - FLASK_ENV=development
+    # entrypoint: ["tail", "-f", "/dev/null"]
+    entrypoint: ["make", "run"]
+    environment:
+      - PYTHONPATH=/Users/xiez/dev/beatsight/vendor/repostat/:$PYTHONPATH
     volumes:
       - ..:/Users/xiez/dev/beatsight
-      - ../../seahub:/seahub
+      - /Users/xiez/src/seahub:/seahub
       - ../../../dev/17zuoye/bank:/bank
       - ../../../dev/17zuoye/ferrum:/ferrum
       - ../../../dev/17zuoye/gemserver:/gemserver
