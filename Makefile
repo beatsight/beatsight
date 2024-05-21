@@ -6,14 +6,17 @@ run:
 shell:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py shell
 
-dbchange:
+sql:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py makemigrations
 
-dbapply:
+mig:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py migrate
 
 pull:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py pull
+
+curl:
+	curl http://localhost:8081/stats/ |  python -mjson.tool
 
 clean:
 	rm -rf db.sqlite3 && \

@@ -5,11 +5,12 @@ from django.db import models
 from rest_framework import serializers as S
 
 from projects.models import Project
+from .utils import CustomJSONEncoder
 
 
 class GeneralData(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    _last_stat_commit = models.CharField(max_length=50, default=None, null=True)
+    last_stat_commit = models.CharField(max_length=50, default=None, null=True)
 
     # accumulated
     commits_count = models.IntegerField(default=0)
@@ -26,13 +27,14 @@ class GeneralData(models.Model):
     def age(self):
         return (self.last_commit_date - self.first_commit_date).days
 
+
 class GeneralDataSerializer(S.ModelSerializer):
     project_name = S.CharField(source='project.name')
     age = S.SerializerMethodField()
 
     class Meta:
         model = GeneralData
-        exclude = ['id', 'project']
+        exclude = ['id', 'project', 'last_stat_commit']
 
     def get_age(self, obj):
         return obj.age
@@ -44,10 +46,10 @@ default_json_obj = json.dumps({})
 class ActivityData(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
-    _recent_weekly_activity = models.CharField(max_length=4096, default=default_json_list)  # JSON field
-    _month_in_year_activity = models.CharField(max_length=4096, default=default_json_obj)  # JSON field
-    _weekday_activity = models.CharField(max_length=4096, default=default_json_obj)  # JSON field
-    _hourly_activity = models.CharField(max_length=4096, default=default_json_obj)  # JSON field
+    _recent_weekly_activity = models.TextField(default=default_json_list)  # JSON field
+    _month_in_year_activity = models.TextField(default=default_json_obj)  # JSON field
+    _weekday_activity = models.TextField(default=default_json_obj)  # JSON field
+    _hourly_activity = models.TextField(default=default_json_obj)  # JSON field; Note: hour is in local timezone
 
     def get_recent_weekly_activity(self):
         if self._recent_weekly_activity:
@@ -95,7 +97,6 @@ class ActivityData(models.Model):
 
 
 class ActivityDataSerializer(S.ModelSerializer):
-    # project_name = S.CharField(source='project.name')
     recent_weekly_activity = S.SerializerMethodField()
     month_in_year_activity = S.SerializerMethodField()
     weekday_activity = S.SerializerMethodField()
@@ -122,3 +123,34 @@ class ActivityDataSerializer(S.ModelSerializer):
 
     def get_hourly_activity(self, obj):
         return obj.hourly_activity
+
+
+class AuthorData(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    _top_authors_statistics = models.TextField(default=default_json_list)  # JSON field
+
+    def get_top_authors_statistics(self):
+        if self._top_authors_statistics:
+            return json.loads(self._top_authors_statistics)
+        else:
+            return {}
+
+    def set_top_authors_statistics(self, val: List):
+        self._top_authors_statistics = json.dumps(val, cls=CustomJSONEncoder)
+
+    top_authors_statistics = property(get_top_authors_statistics, set_top_authors_statistics)
+
+
+class AuthorDataSerializer(S.ModelSerializer):
+    top_authors_statistics = S.SerializerMethodField()
+
+    class Meta:
+        model = AuthorData
+        exclude = [
+            'id', 'project',
+            '_top_authors_statistics',
+        ]
+
+    def get_top_authors_statistics(self, obj):
+        return obj.top_authors_statistics

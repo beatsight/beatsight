@@ -49,14 +49,18 @@ if not os.path.exists(REPO_PATH_PREFIX):
 class Command(BaseCommand):
     help = "Pull repos of all projects"
 
-    # def add_arguments(self, parser):
-    #     parser.add_argument("poll_ids", nargs="+", type=int)
+    def add_arguments(self, parser):
+        parser.add_argument("--project", default='', type=str)
 
     def handle(self, *args, **options):
-        self.stdout.write('start to pull repos...')
+        proj = options['project']
+
+        self.stdout.write(f'start to pull repos..., project: {proj}')
 
         for p in Project.objects.all():
             # check whether a project has been cloned
+            if proj and p.name != proj:
+                continue
 
             clone_repo = False
             try:
