@@ -154,3 +154,38 @@ class AuthorDataSerializer(S.ModelSerializer):
 
     def get_top_authors_statistics(self, obj):
         return obj.top_authors_statistics
+
+
+class FileData(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    total_files_count = models.IntegerField(default=0)
+    total_lines_count = models.IntegerField(default=0)
+    _file_summary = models.TextField(default=default_json_list)  # JSON field
+
+    def get_file_summary(self):
+        if self._file_summary:
+            return json.loads(self._file_summary)
+        else:
+            return {}
+
+    def set_file_summary(self, val: List):
+        self._file_summary = json.dumps(val, cls=CustomJSONEncoder)
+
+    file_summary = property(get_file_summary, set_file_summary)
+
+
+class FileDataSerializer(S.ModelSerializer):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    file_summary = S.SerializerMethodField()
+
+    class Meta:
+        model = FileData
+        exclude = [
+            'id', 'project',
+            '_file_summary',
+        ]
+
+    def get_file_summary(self, obj):
+        return obj.file_summary

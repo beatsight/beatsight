@@ -9,14 +9,15 @@ from django.utils.timezone import get_current_timezone
 
 from projects.models import Project
 from repo_sync.models import SyncInfo
-from stats.models import GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer, AuthorData, AuthorDataSerializer
+from stats.models import GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer, \
+    AuthorData, AuthorDataSerializer, FileData, FileDataSerializer
 
 from vendor.repostat.report.jsonreportcreator import JSONReportCreator
 from vendor.repostat.tools.configuration import Configuration
 from vendor.repostat.analysis.gitrepository import GitRepository
 
 
-def get_a_project_stat(p: Project):
+def get_a_project_stat(p: Project, force=False):
     """Get stat data of a project."""
 
     try:
@@ -39,7 +40,12 @@ def get_a_project_stat(p: Project):
     except AuthorData.DoesNotExist:
         au = None
 
-    if si and gd and si.head_commit == gd.last_stat_commit:
+    try:
+        fd = FileData.objects.get(project=p)
+    except FileData.DoesNotExist:
+        fd = None
+
+    if force is False and si and gd and si.head_commit == gd.last_stat_commit:
         # not modified
         gd_s = GeneralDataSerializer(gd)
 
@@ -49,9 +55,13 @@ def get_a_project_stat(p: Project):
             ac_s = None
 
         au_s = AuthorDataSerializer(au) if au else None
+        fd_s = FileDataSerializer(fd) if fd else None
     else:
         # start to generate stat data
-        last_sync_commit = gd.last_stat_commit if gd else ''
+        if force is True:
+            last_sync_commit = ''
+        else:
+            last_sync_commit = gd.last_stat_commit if gd else ''
         repo = GitRepository(
             p.repo_path, prev_commit_oid=last_sync_commit)
         config = Configuration([p.repo_path, '.'])
@@ -88,6 +98,15 @@ def get_a_project_stat(p: Project):
         au.save()
         au_s = AuthorDataSerializer(au)
 
+        files_data = data['files']
+        if fd is None:
+            fd = FileData(project=p)
+        fd.file_summary = files_data['file_summary']
+        fd.total_files_count = files_data['total_files_count']
+        fd.total_lines_count = files_data['total_lines_count']
+        fd.save()
+        fd_s = FileDataSerializer(fd)
+
         # save current commit as last stat commit
         gd.last_stat_commit = si.head_commit
         gd.save()
@@ -96,7 +115,7 @@ def get_a_project_stat(p: Project):
         'general': gd_s.data,
         'activity': ac_s.data if ac_s else {},
         'authors': au_s.data if au_s else {},
-        'files': {},
+        'files': fd_s.data if fd_s else {},
     }
 
 
@@ -104,9 +123,10 @@ def index(request):
     res = []
 
     proj = request.GET.get('proj', '')
+    force = True if request.GET.get('force', '') == '1' else False
 
     for p in Project.objects.all():
         if proj and p.name == proj:
-            res.append(get_a_project_stat(p))
+            res.append(get_a_project_stat(p, force=force))
 
     return HttpResponse(json.dumps(res), content_type='application/json')
