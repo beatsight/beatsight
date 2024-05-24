@@ -17,7 +17,3 @@ si = SyncInfo(project=p, last_commit='')
 si.save()
 
 SyncInfo.objects.all()
-
-
-find . - path "*/migrations/*.py" -not -name "__init__.py" -delete
-find . - path "*/migrations/*.pyc" -delete  # Also deletes compiled Python files (.pyc)

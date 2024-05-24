@@ -56,3 +56,40 @@ GROUP BY author_email, author_date;
 │ xie.zheng@17zuoye.com │ xie.zheng   │ 2022-08-31  │                      1 │
 │ xie.zheng@17zuoye.com │ xie.zheng   │ 2022-09-05  │                      2 │
 │ xie.zheng@17zuoye.com │ xie.zheng   │ 2022-09-20  │                      2 │
+
+-- all user's commit count distribution in a project
+
+-- author contribution order by commit count in a project
+D select author_email, sum(daily_commit_count) as daily_commit_count_sum from author_daily_commits where project = 'gemserver' group by author_email order by daily_commit_count_sum desc;
+┌──────────────────────────┬────────────────────────┐
+│       author_email       │ daily_commit_count_sum │
+│         varchar          │         int128         │
+├──────────────────────────┼────────────────────────┤
+│ hui.wu.a@17zuoye.com     │                    192 │
+│ xin.xin@17zuoye.com      │                    180 │
+│ xingyu.li@17zuoye.net    │                    160 │
+│ liming.ma@17zuoye.com    │                    135 │
+│ baiqiang.wen@17zuoye.com │                    110 │
+│ maliming0121@126.com     │                     95 │
+│ xie.zheng@17zuoye.com    │                     37 │
+│ lei.yang@17zuoye.com     │                     37 │
+│ sirun.wang@17zuoye.net   │                     24 │
+│ lxy2325@126.com          │                      9 │
+│ mrsmish@yahoo.com        │                      7 │
+
+-- an author's daily commit distribution
+
+D select * from author_daily_commits where project = 'gemserver' and author_email = 'xie.zheng@17zuoye.com' order by author_date;
+
+┌───────────────────────┬─────────────┬────────────────────┬───────────┐
+│     author_email      │ author_date │ daily_commit_count │  project  │
+│        varchar        │    date     │       int32        │  varchar  │
+├───────────────────────┼─────────────┼────────────────────┼───────────┤
+│ xie.zheng@17zuoye.com │ 2022-08-18  │                  2 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-08-19  │                  4 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-08-30  │                  2 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-08-31  │                  1 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-09-05  │                  2 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-09-08  │                  4 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-09-20  │                  2 │ gemserver │
+│ xie.zheng@17zuoye.com │ 2022-09-23  │                  1 │ gemserver │
