@@ -1,5 +1,8 @@
 *~
 db.sqlite3
+stats.duckdb
+stats.duckdb.wal
 *.pyc
+.DS_Store
 
 vendor/repostat
