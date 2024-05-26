@@ -18,8 +18,13 @@ def save_dataframe_to_duckdb(df, table_name, if_exists='replace'):
 
 def delete_dataframes_from_duckdb(table_name, clause):
     with duckdb.connect("stats.duckdb") as conn:
-        conn.execute(f"delete from {table_name} where {clause}")
+        res = conn.sql(f"select * from information_schema.tables where table_name = '{table_name}'").fetchall()
+        if res:
+            conn.execute(f"delete from {table_name} where {clause}")
 
-def fetch_from_duckdb(sql):
+def fetch_from_duckdb(sql, to_df=False):
     with duckdb.connect("stats.duckdb") as conn:
-        return conn.sql(sql).fetchall()
+        if to_df:
+            return conn.sql(sql).df()
+        else:
+            return conn.sql(sql).fetchall()

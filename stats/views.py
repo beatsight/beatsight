@@ -16,7 +16,7 @@ from vendor.repostat.report.jsonreportcreator import JSONReportCreator
 from vendor.repostat.tools.configuration import Configuration
 from vendor.repostat.analysis.gitrepository import GitRepository
 
-from .utils import save_dataframe_to_duckdb, delete_dataframes_from_duckdb
+from .utils import save_dataframe_to_duckdb, delete_dataframes_from_duckdb, fetch_from_duckdb
 
 def get_a_project_stat(p: Project, force=False):
     """Get stat data of a project."""
@@ -63,9 +63,15 @@ def get_a_project_stat(p: Project, force=False):
             last_sync_commit = ''
         else:
             last_sync_commit = gd.last_stat_commit if gd else ''
+        # get whole/partial repo history
         repo = GitRepository(
             p.repo_path, prev_commit_oid=last_sync_commit)
 
+        # save repo history df
+        replace_or_append = 'replace' if last_sync_commit == '' else 'append'
+        save_dataframe_to_duckdb(repo.whole_history_df, p.name, replace_or_append)
+
+        # parse git log and generate report
         config = Configuration([p.repo_path, '.'])
         j_report = JSONReportCreator(config, repo)
         data = j_report.create()
@@ -83,6 +89,7 @@ def get_a_project_stat(p: Project, force=False):
         gd.save()
         gd_s = GeneralDataSerializer(gd)
 
+        ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
         activity_data = data['activity']
         if ac is None:
             ac = ActivityData(project=p)
@@ -93,13 +100,43 @@ def get_a_project_stat(p: Project, force=False):
         ac.save()
         ac_s = ActivityDataSerializer(ac)
 
+        ### authors stat (insertions, deletions, commits_count, active_days_count ...)
         author_data = data['authors']
         if au is None:
             au = AuthorData(project=p)
-        au.top_authors_statistics = author_data['top_authors_statistics']
+
+        # save authors' statistics df
+        author_contributions = author_data['authors_statistics']
+        author_contributions['project'] = p.name
+
+        if last_sync_commit == '':
+            delete_dataframes_from_duckdb("author_contributions", f"project='{p.name}'")
+        save_dataframe_to_duckdb(author_contributions, "author_contributions", "append")
+
+        # calculate author's total data
+        sql = f'''SELECT
+          author_email,
+          SUM(insertions) AS insertions,
+          SUM(deletions) AS deletions,
+          SUM(merge_commits_count) AS merge_commits_count,
+          FIRST(author_name) as author_name,
+          MIN(first_commit_date) AS first_commit_date,
+          MAX(latest_commit_date) AS latest_commit_date,
+          SUM(active_days_count) AS active_days_count,
+          SUM(contributed_days_count) AS contributed_days_count,
+          SUM(commits_count) AS commits_count,
+          project
+        FROM
+          author_contributions
+        WHERE
+          project = '{p.name}'
+        GROUP BY all
+        ORDER by commits_count desc'''
+        au.authors_statistics = fetch_from_duckdb(sql, to_df=True).to_dict('records')
         au.save()
         au_s = AuthorDataSerializer(au)
 
+        ### files stat (file type, size, count, lines count)
         files_data = data['files']
         if fd is None:
             fd = FileData(project=p)
@@ -108,10 +145,6 @@ def get_a_project_stat(p: Project, force=False):
         fd.total_lines_count = files_data['total_lines_count']
         fd.save()
         fd_s = FileDataSerializer(fd)
-
-        # save git history df
-        replace_or_append = 'replace' if last_sync_commit == '' else 'append'
-        save_dataframe_to_duckdb(repo.whole_history_df, p.name, replace_or_append)
 
         # save user daily commits count df
         # should be calculated in local timezones

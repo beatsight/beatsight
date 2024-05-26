@@ -54,7 +54,7 @@ def detail(request, proj):
         au = AuthorData.objects.get(project=p)
     except AuthorData.DoesNotExist:
         au = None
-    top_authors_statistics = au.top_authors_statistics if au else None
+    top_authors_statistics = au.authors_statistics[:10] if au else None
 
     s = DetailSerializer(
         p, last_commit_date=last_commit_date, recent_weekly_activity=recent_weekly_activity,
@@ -67,22 +67,35 @@ def contributors(request, proj):
     """get contributors of a project"""
     p = get_object_or_404(Project, name=proj)
 
-    data = fetch_from_duckdb(
-        "select author_email, sum(daily_commit_count) as daily_commit_count_sum from author_daily_commits "
-        f"where project = '{p.name}' group by author_email order by daily_commit_count_sum desc"
-    )
+    try:
+        au = AuthorData.objects.get(project=p)
+    except AuthorData.DoesNotExist:
+        assert False, 'TODO: no author data'
 
     res = []
-    for row in data:
-        res.append({
-            'author_email': row[0],
-            'commit_count_sum': row[1],
-        })
-
-    for e in res:
+    for e in au.authors_statistics:
         data = fetch_from_duckdb(
             f'''select * from author_daily_commits where project = '{p.name}' and author_email = '{e["author_email"]}' order by author_date'''
         )
         e['commit_distribution'] = data
+        res.append(e)
+
+    # data = fetch_from_duckdb(
+    #     "select author_email, sum(daily_commit_count) as daily_commit_count_sum from author_daily_commits "
+    #     f"where project = '{p.name}' group by author_email order by daily_commit_count_sum desc"
+    # )
+
+    # res = []
+    # for row in data:
+    #     res.append({
+    #         'author_email': row[0],
+    #         'commit_count_sum': row[1],
+    #     })
+
+    # for e in res:
+    #     data = fetch_from_duckdb(
+    #         f'''select * from author_daily_commits where project = '{p.name}' and author_email = '{e["author_email"]}' order by author_date'''
+    #     )
+    #     e['commit_distribution'] = data
 
     return JsonResponse(res, safe=False)

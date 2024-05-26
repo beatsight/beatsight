@@ -128,32 +128,32 @@ class ActivityDataSerializer(S.ModelSerializer):
 class AuthorData(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
-    _top_authors_statistics = models.TextField(default=default_json_list)  # JSON field
+    _authors_statistics = models.TextField(default=default_json_list)  # JSON field
 
-    def get_top_authors_statistics(self):
-        if self._top_authors_statistics:
-            return json.loads(self._top_authors_statistics)
+    def get_authors_statistics(self):
+        if self._authors_statistics:
+            return json.loads(self._authors_statistics)
         else:
             return {}
 
-    def set_top_authors_statistics(self, val: List):
-        self._top_authors_statistics = json.dumps(val, cls=CustomJSONEncoder)
+    def set_authors_statistics(self, val: List):
+        self._authors_statistics = json.dumps(val, cls=CustomJSONEncoder)
 
-    top_authors_statistics = property(get_top_authors_statistics, set_top_authors_statistics)
+    authors_statistics = property(get_authors_statistics, set_authors_statistics)
 
 
 class AuthorDataSerializer(S.ModelSerializer):
-    top_authors_statistics = S.SerializerMethodField()
+    authors_statistics = S.SerializerMethodField()
 
     class Meta:
         model = AuthorData
         exclude = [
             'id', 'project',
-            '_top_authors_statistics',
+            '_authors_statistics',
         ]
 
-    def get_top_authors_statistics(self, obj):
-        return obj.top_authors_statistics
+    def get_authors_statistics(self, obj):
+        return obj.authors_statistics
 
 
 class FileData(models.Model):
