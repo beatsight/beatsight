@@ -3,148 +3,176 @@ import sys
 from datetime import datetime
 
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.timezone import get_current_timezone
 import pandas as pd
 
 from projects.models import Project
-from repo_sync.models import SyncInfo
-from stats.models import GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer, \
-    AuthorData, AuthorDataSerializer, FileData, FileDataSerializer
-from vendor.repostat.report.jsonreportcreator import JSONReportCreator
-from vendor.repostat.tools.configuration import Configuration
+from stats.models import (
+    GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer,
+    AuthorData, AuthorDataSerializer,
+    # FileData, FileDataSerializer,
+)
 from vendor.repostat.analysis.gitrepository import GitRepository
 
 from .utils import save_dataframe_to_duckdb, delete_dataframes_from_duckdb, fetch_from_duckdb
 
 def get_a_project_stat(p: Project, force=False):
     """Get stat data of a project."""
+    gen_new = False
+    if force is True:
+        last_sync_commit = ''
+        gen_new = True
 
-    try:
-        si = SyncInfo.objects.get(project=p)
-    except SyncInfo.DoesNotExist:
-        si = None
+    if p.head_commit != p.last_stat_commit:
+        last_sync_commit = p.last_stat_commit
+        gen_new = True
 
-    try:
-        gd = GeneralData.objects.get(project=p)
-    except GeneralData.DoesNotExist:
-        gd = None
-
-    try:
-        ac = ActivityData.objects.get(project=p)
-    except ActivityData.DoesNotExist:
-        ac = None
-
-    try:
-        au = AuthorData.objects.get(project=p)
-    except AuthorData.DoesNotExist:
-        au = None
-
-    try:
-        fd = FileData.objects.get(project=p)
-    except FileData.DoesNotExist:
-        fd = None
-
-    if force is False and si and gd and si.head_commit == gd.last_stat_commit:
-        # not modified
-        gd_s = GeneralDataSerializer(gd)
-
-        if ac:
-            ac_s = ActivityDataSerializer(ac)
-        else:
-            ac_s = None
-
-        au_s = AuthorDataSerializer(au) if au else None
-        fd_s = FileDataSerializer(fd) if fd else None
-    else:
-        # start to generate stat data
-        if force is True:
-            last_sync_commit = ''
-        else:
-            last_sync_commit = gd.last_stat_commit if gd else ''
+    if gen_new:
         # get whole/partial repo history
-        repo = GitRepository(
-            p.repo_path, prev_commit_oid=last_sync_commit)
+        repo = GitRepository(p.repo_path, prev_commit_oid=last_sync_commit)
 
         # save repo history df
         replace_or_append = 'replace' if last_sync_commit == '' else 'append'
-        save_dataframe_to_duckdb(repo.whole_history_df, p.name, replace_or_append)
+        save_dataframe_to_duckdb(repo.whole_history_df, f"{p.name}", replace_or_append)
+        # save current commit as last stat commit
+        p.last_stat_commit = p.head_commit
+        p.save()
 
-        # parse git log and generate report
-        config = Configuration([p.repo_path, '.'])
-        j_report = JSONReportCreator(config, repo)
-        data = j_report.create()
-
-        general_data = data['general']
-        if gd is None:
+        ### general data
+        try:
+            gd = GeneralData.objects.get(project=p)
+        except GeneralData.DoesNotExist:
             gd = GeneralData(project=p)
-        gd.commits_count += general_data['commits_count']
-        gd.active_days_count += general_data['active_days_count']
-        gd.files_count = general_data['files_count']
-        gd.first_commit_id = general_data['first_commit_id']
-        gd.first_commit_date = timezone.make_aware(general_data['first_commit_date'])
-        gd.last_commit_id = general_data['last_commit_id']
-        gd.last_commit_date = timezone.make_aware(general_data['last_commit_date'])
+
+        gd.files_count = repo.head.files_count
+
+        sql = f''' SELECT
+  commit_sha,
+  author_timestamp
+FROM
+  {p.name}
+ORDER BY
+  author_timestamp ASC
+LIMIT 1;
+        '''
+        res = fetch_from_duckdb(sql)
+        assert len(res) == 1
+        gd.first_commit_id, gd.first_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
+
+        sql = f''' SELECT
+  commit_sha,
+  author_timestamp
+FROM
+  {p.name}
+ORDER BY
+  author_timestamp DESC
+LIMIT 1;
+        '''
+        res = fetch_from_duckdb(sql)
+        assert len(res) == 1
+        gd.last_commit_id, gd.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
+        gd.age = (gd.last_commit_at - gd.first_commit_at).days
+
+        sql = f''' SELECT
+  COUNT(*) AS total_commits,
+  COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
+FROM
+  {p.name};
+'''
+        res = fetch_from_duckdb(sql)
+        assert len(res) == 1
+        gd.commits_count, gd.active_days_count = res[0]
         gd.save()
-        gd_s = GeneralDataSerializer(gd)
 
         ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
-        activity_data = data['activity']
-        if ac is None:
+        # activity_data = data['activity']
+        try:
+            ac = ActivityData.objects.get(project=p)
+        except ActivityData.DoesNotExist:
             ac = ActivityData(project=p)
-        ac.recent_weekly_activity = activity_data['recent_weekly_activity']
-        ac.month_in_year_activity = activity_data['month_in_year_activity']
-        ac.weekday_activity = activity_data['weekday_activity']
-        ac.hourly_activity = activity_data['hourly_activity']
+
+        sql = f'''SELECT
+    DATE_TRUNC('week', TO_TIMESTAMP(author_timestamp)) AS week,
+    COUNT(commit_sha) AS commit_count
+FROM {p.name}
+GROUP BY week
+ORDER BY week;
+        '''
+        weekly_activity = []
+        for e in fetch_from_duckdb(sql):
+            weekly_activity.append({
+                'week': e[0],
+                'commit_count': e[1],
+            })
+        ac.weekly_activity = weekly_activity
+
+        sql = f'''SELECT
+    DATE_TRUNC('month', TO_TIMESTAMP(author_timestamp)) AS month,
+    COUNT(commit_sha) AS commit_count
+FROM {p.name}
+GROUP BY month
+ORDER BY month;
+        '''
+        monthly_activity = []
+        for e in fetch_from_duckdb(sql):
+            monthly_activity.append({
+                'month': e[0],
+                'commit_count': e[1],
+            })
+        ac.monthly_activity = monthly_activity
+
+        sql = f'''SELECT
+    DATE_TRUNC('year', TO_TIMESTAMP(author_timestamp)) AS year,
+    COUNT(commit_sha) AS commit_count
+FROM {p.name}
+GROUP BY year
+ORDER BY year;
+        '''
+        yearly_activity = []
+        for e in fetch_from_duckdb(sql):
+            yearly_activity.append({
+                'year': e[0],
+                'commit_count': e[1],
+            })
+        ac.yearly_activity = yearly_activity
         ac.save()
-        ac_s = ActivityDataSerializer(ac)
 
         ### authors stat (insertions, deletions, commits_count, active_days_count ...)
-        author_data = data['authors']
-        if au is None:
-            au = AuthorData(project=p)
+        # author_data = data['authors']
 
-        # save authors' statistics df
-        author_contributions = author_data['authors_statistics']
-        author_contributions['project'] = p.name
+        sql = f'''
+        SELECT author_email,
+        FIRST(author_name) AS author_name,
+        COUNT(*) AS commit_count,
+        CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
+        CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
+        FROM {p.name}
+        GROUP BY author_email
+        ORDER BY commit_count DESC;
+        '''
+        for e in fetch_from_duckdb(sql):
+            try:
+                au = AuthorData.objects.get(project=p, author_email=e[0])
+            except AuthorData.DoesNotExist:
+                au = AuthorData(project=p, author_email=e[0])
 
-        if last_sync_commit == '':
-            delete_dataframes_from_duckdb("author_contributions", f"project='{p.name}'")
-        save_dataframe_to_duckdb(author_contributions, "author_contributions", "append")
+            au.author_email, au.author_name, au.commit_count = e[0], e[1], e[2]
+            au.first_commit_date, au.last_commit_date = timezone.make_aware(e[3]), timezone.make_aware(e[4])
+            au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
+            au.save()
 
-        # calculate author's total data
-        sql = f'''SELECT
-          author_email,
-          SUM(insertions) AS insertions,
-          SUM(deletions) AS deletions,
-          SUM(merge_commits_count) AS merge_commits_count,
-          FIRST(author_name) as author_name,
-          MIN(first_commit_date) AS first_commit_date,
-          MAX(latest_commit_date) AS latest_commit_date,
-          SUM(active_days_count) AS active_days_count,
-          SUM(contributed_days_count) AS contributed_days_count,
-          SUM(commits_count) AS commits_count,
-          project
-        FROM
-          author_contributions
-        WHERE
-          project = '{p.name}'
-        GROUP BY all
-        ORDER by commits_count desc'''
-        au.authors_statistics = fetch_from_duckdb(sql, to_df=True).to_dict('records')
-        au.save()
-        au_s = AuthorDataSerializer(au)
-
-        ### files stat (file type, size, count, lines count)
-        files_data = data['files']
-        if fd is None:
-            fd = FileData(project=p)
-        fd.file_summary = files_data['file_summary']
-        fd.total_files_count = files_data['total_files_count']
-        fd.total_lines_count = files_data['total_lines_count']
-        fd.save()
-        fd_s = FileDataSerializer(fd)
+        ## Do not stat files count/size for the moment
+        # ### files stat (file type, size, count, lines count)
+        # files_data = data['files']
+        # if fd is None:
+        #     fd = FileData(project=p)
+        # fd.file_summary = files_data['file_summary']
+        # fd.total_files_count = files_data['total_files_count']
+        # fd.total_lines_count = files_data['total_lines_count']
+        # fd.save()
+        # fd_s = FileDataSerializer(fd)
 
         # save user daily commits count df
         # should be calculated in local timezones
@@ -161,15 +189,18 @@ def get_a_project_stat(p: Project, force=False):
             delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'")
         save_dataframe_to_duckdb(author_commit_counts, "author_daily_commits", "append")
 
-        # save current commit as last stat commit
-        gd.last_stat_commit = si.head_commit
-        gd.save()
+    # show the data
+    gd_s = GeneralDataSerializer(gd)
+    ac_s = ActivityDataSerializer(ac)
+    author_data = []
+    for e in AuthorData.objects.filter(project=p):
+        author_data.append(AuthorDataSerializer(e).data)
 
     return {
         'general': gd_s.data,
-        'activity': ac_s.data if ac_s else {},
-        'authors': au_s.data if au_s else {},
-        'files': fd_s.data if fd_s else {},
+        'activity': ac_s.data,
+        'authors': author_data,
+        # 'files': fd_s.data if fd_s else {},
     }
 
 
@@ -183,4 +214,4 @@ def index(request):
         if proj and p.name == proj:
             res.append(get_a_project_stat(p, force=force))
 
-    return HttpResponse(json.dumps(res), content_type='application/json')
+    return JsonResponse(res, safe=False)

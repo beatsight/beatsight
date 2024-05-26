@@ -59,6 +59,14 @@ GROUP BY author_email, author_date;
 
 -- all user's commit count distribution in a project
 
+SELECT author_email, FIRST(author_name) AS author_name, COUNT(*) AS commit_count,
+       CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
+       CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
+FROM sicp
+GROUP BY author_email
+ORDER BY commit_count DESC;
+
+
 -- author contribution order by commit count in a project
 D select author_email, sum(daily_commit_count) as daily_commit_count_sum from author_daily_commits where project = 'gemserver' group by author_email order by daily_commit_count_sum desc;
 ┌──────────────────────────┬────────────────────────┐
@@ -93,3 +101,9 @@ D select * from author_daily_commits where project = 'gemserver' and author_emai
 │ xie.zheng@17zuoye.com │ 2022-09-08  │                  4 │ gemserver │
 │ xie.zheng@17zuoye.com │ 2022-09-20  │                  2 │ gemserver │
 │ xie.zheng@17zuoye.com │ 2022-09-23  │                  1 │ gemserver │
+
+
+select author_date, SUM(daily_commit_count) as daily_commit_count
+from author_daily_commits
+where project = 'gemserver' and author_email = 'xie.zheng@17zuoye.com'
+group by author_date order by author_date;
