@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import serializers as S
 
 class Project(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     repo_url = models.CharField(max_length=1000)    # github/gitlab url
     repo_path = models.CharField(max_length=1000)  # repo local path
     branch = models.CharField(max_length=100, default='master')      # master/dev/...

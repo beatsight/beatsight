@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'projects.apps.ProjectsConfig',
     # 'repo_sync.apps.RepoSyncConfig',
     'stats.apps.StatsConfig',
+    'developers.apps.DevelopersConfig',
 ]
 
 MIDDLEWARE = [

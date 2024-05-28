@@ -9,6 +9,7 @@ from django.utils.timezone import get_current_timezone
 import pandas as pd
 
 from projects.models import Project
+from developers.models import Developer
 from stats.models import (
     GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer,
     AuthorData, AuthorDataSerializer,
@@ -162,6 +163,15 @@ ORDER BY year;
             au.first_commit_date, au.last_commit_date = timezone.make_aware(e[3]), timezone.make_aware(e[4])
             au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
             au.save()
+
+            try:
+                de = Developer.objects.get(email=au.author_email)
+            except Developer.DoesNotExist:
+                de = Developer(email=au.author_email)
+            de.name = au.author_name
+            de.set_first_last_commit_at(au.first_commit_date, au.last_commit_date)
+            de.save()
+            de.add_a_project(p)
 
         ## Do not stat files count/size for the moment
         # ### files stat (file type, size, count, lines count)
