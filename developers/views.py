@@ -1,3 +1,6 @@
+import json
+
+import pandas as pd
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 
@@ -44,6 +47,7 @@ def detail(request, email):
     d = get_object_or_404(Developer, email=email)
 
     commit_count = get_recent_weekly_commit_count(email)
+
     res = DetailSerializer(d, recent_weekly_activity=commit_count).data
 
     return JsonResponse(res, safe=False)
@@ -57,7 +61,10 @@ def projects(request, email):
         data = ProjectSimpleSerializer(proj).data
         data['commit_distribution'] = []
         for ee in fetch_from_duckdb(
-            f''' select author_date, SUM(daily_commit_count) as daily_commit_count
+            f''' select author_date,
+            SUM(daily_commit_count) as daily_commit_count,
+            SUM(insertions) as daily_insertions,
+            SUM(deletions) as daily_deletions,
             from author_daily_commits
             where project = '{proj.name}' and author_email = '{email}'
             group by author_date order by author_date;
@@ -66,6 +73,8 @@ def projects(request, email):
             data['commit_distribution'].append({
                 'author_date': ee[0],
                 'daily_commit_count': ee[1],
+                'daily_insertions': ee[2],
+                'daily_deletionts': ee[3],
             })
         res.append(data)
 

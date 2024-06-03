@@ -3,18 +3,27 @@ from datetime import datetime, date
 from django.utils import timezone
 from rest_framework import serializers as S
 
+from beatsight.models import TimestampedModel
 from projects.models import Project
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 
-class Developer(models.Model):
+
+class Language(TimestampedModel):
+    name = models.CharField(max_length=255, primary_key=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Developer(TimestampedModel):
     name = models.CharField(max_length=200)
     email = models.CharField(max_length=200, unique=True)
     projects = models.ManyToManyField(Project)
-
     status = models.CharField(max_length=10)  # active or inactive
 
     first_commit_at = models.DateTimeField()
     last_commit_at = models.DateTimeField()
+    total_commits = models.IntegerField()
     contributed_days = models.IntegerField()
 
     def __str__(self):
@@ -46,6 +55,28 @@ class Developer(models.Model):
         self.projects.add(p)
 
 
+class DeveloperLanguage(TimestampedModel):
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    use_count = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.developer.name} - {self.language.name}"
+
+
+class LanguageSerializer(S.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = ['name']
+
+class DeveloperLanguageSerializer(S.ModelSerializer):
+    language = LanguageSerializer(read_only=True)
+
+    class Meta:
+        model = DeveloperLanguage
+        fields = ['language', 'use_count']
+
+
 class SimpleSerializer(S.ModelSerializer):
     class Meta:
         model = Developer
@@ -63,6 +94,11 @@ class SimpleSerializer(S.ModelSerializer):
 
 class DetailSerializer(SimpleSerializer):
     projects = S.SerializerMethodField()
+    developer_languages = DeveloperLanguageSerializer(source='developerlanguage_set', many=True, read_only=True)
+
+    # def __init__(self, *args, **kwargs):
+    #     self.top_langs = kwargs.pop('top_langs', None)
+    #     super().__init__(*args, **kwargs)
 
     class Meta:
         model = Developer

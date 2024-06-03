@@ -72,7 +72,10 @@ def contributors(request, proj):
         data = AuthorDataSerializer(e).data
         data['commit_distribution'] = []
         for ee in fetch_from_duckdb(
-            f''' select author_date, SUM(daily_commit_count) as daily_commit_count
+            f''' select author_date,
+            SUM(daily_commit_count) as daily_commit_count,
+            SUM(insertions) as daily_insertions,
+            SUM(deletions) as daily_deletions,
             from author_daily_commits
             where project = '{p.name}' and author_email = '{e.author_email}'
             group by author_date order by author_date;
@@ -81,6 +84,8 @@ def contributors(request, proj):
             data['commit_distribution'].append({
                 'author_date': ee[0],
                 'daily_commit_count': ee[1],
+                'daily_insertions': ee[2],
+                'daily_deletionts': ee[3],
             })
         res.append(data)
 

@@ -61,8 +61,12 @@ class ActivityData(models.Model):
         data_dict = defaultdict(int)
         # Iterate through the data and add the data to the dictionary
         for item in self.weekly_activity:
-            # week_date = datetime.strptime(item['week'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=pytz.utc)
-            week_date = item['week']
+            # de-serialize jsondate string
+            if isinstance(item['week'], datetime):
+                week_date = item['week']
+            else:
+                week_date = datetime.strptime(item['week'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=pytz.utc)
+
             if start_date <= week_date <= this_monday:
                 data_dict[item['week']] = item['commit_count']
 

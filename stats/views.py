@@ -1,6 +1,7 @@
 import json
 import sys
 from datetime import datetime
+from collections import defaultdict
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
@@ -8,8 +9,9 @@ from django.utils import timezone
 from django.utils.timezone import get_current_timezone
 import pandas as pd
 
+from beatsight.utils.pl_ext import PL_EXT
 from projects.models import Project
-from developers.models import Developer
+from developers.models import Developer, Language, DeveloperLanguage
 from stats.models import (
     GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer,
     AuthorData, AuthorDataSerializer,
@@ -33,7 +35,6 @@ def get_a_project_stat(p: Project, force=False):
     if gen_new:
         # get whole/partial repo history
         repo = GitRepository(p.repo_path, prev_commit_oid=last_sync_commit)
-
         # save repo history df
         replace_or_append = 'replace' if last_sync_commit == '' else 'append'
         save_dataframe_to_duckdb(repo.whole_history_df, f"{p.name}", replace_or_append)
@@ -165,13 +166,14 @@ ORDER BY year;
             au.save()
 
             try:
-                de = Developer.objects.get(email=au.author_email)
+                dev = Developer.objects.get(email=au.author_email)
             except Developer.DoesNotExist:
-                de = Developer(email=au.author_email)
-            de.name = au.author_name
-            de.set_first_last_commit_at(au.first_commit_date, au.last_commit_date)
-            de.save()
-            de.add_a_project(p)
+                dev = Developer(email=au.author_email)
+            dev.name = au.author_name
+            dev.set_first_last_commit_at(au.first_commit_date, au.last_commit_date)
+            dev.total_commits = au.commit_count
+            dev.save()
+            dev.add_a_project(p)
 
         ## Do not stat files count/size for the moment
         # ### files stat (file type, size, count, lines count)
@@ -191,13 +193,40 @@ ORDER BY year;
             pd.TimedeltaIndex(df['author_tz_offset'], unit='m')
         df['author_date'] = df['author_date'].dt.date
 
-        author_commit_counts = df.groupby(['author_email', 'author_date']).size().reset_index(name='daily_commit_count')
-        author_commit_counts = author_commit_counts[author_commit_counts['daily_commit_count'] > 0]
-        author_commit_counts['project'] = p.name
-
+        # Group by author_email and date, then calculate the sum of insertions and deletions
+        daily_stats = df.groupby(['author_email', 'author_date']).agg({
+            'insertions': 'sum',
+            'deletions': 'sum',
+            'commit_sha': 'count',
+            'file_exts': lambda x: ';'.join(list(set(sum(x, [])))),
+        }).reset_index()
+        daily_stats.columns = ['author_email', 'author_date', 'insertions', 'deletions', 'daily_commit_count', 'file_exts']
+        daily_stats = daily_stats[daily_stats['daily_commit_count'] > 0]
+        daily_stats['project'] = p.name
         if last_sync_commit == '':
             delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'")
-        save_dataframe_to_duckdb(author_commit_counts, "author_daily_commits", "append")
+        save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append")
+
+        # calculate users' most used languages
+        for email in daily_stats['author_email'].unique().tolist():
+            for lang, cnt in get_most_used_langs(email):
+                try:
+                    lang_obj = Language.objects.get(name=lang)
+                except Language.DoesNotExist:
+                    lang_obj = Language(name=lang)
+                    lang_obj.save()
+
+                dev = Developer.objects.get(email=email)
+                if dev is None:
+                    # raise warning
+                    continue
+
+                try:
+                    dev_lang = DeveloperLanguage.objects.get(developer=dev, language=lang_obj)
+                except DeveloperLanguage.DoesNotExist:
+                    dev_lang = DeveloperLanguage(developer=dev, language=lang_obj)
+                dev_lang.use_count = cnt
+                dev_lang.save()
 
     # show the data
     gd_s = GeneralDataSerializer(gd)
@@ -212,6 +241,30 @@ ORDER BY year;
         'authors': author_data,
         # 'files': fd_s.data if fd_s else {},
     }
+
+def get_most_used_langs(email):
+    sql = f"""
+    select file_exts from author_daily_commits where author_email = '{email}'
+    """
+    file_exts_df = fetch_from_duckdb(sql, to_df=True)
+
+    tmp = pd.DataFrame([x for row in file_exts_df['file_exts'] for x in row.split(';')], columns=['file_ext'])
+    top_file_exts = tmp.groupby('file_ext').size().sort_values(ascending=False).head(10)
+    lang_cnt = defaultdict(int)
+    for fe, count in top_file_exts.items():
+        if fe not in PL_EXT:
+            continue
+        lang_cnt[PL_EXT[fe]] += count
+
+    # # Calculate the total count
+    # total_count = sum(lang_cnt.values())
+
+    return lang_cnt.items()
+
+    # for key, value in
+    #     percentage = (value / total_count) * 100
+    #     top_langs[key] = f"{percentage:.2f}%"
+    # return top_langs
 
 
 def index(request):
