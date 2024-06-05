@@ -11,7 +11,7 @@ import pandas as pd
 
 from beatsight.utils.pl_ext import PL_EXT
 from projects.models import Project
-from developers.models import Developer, Language, DeveloperLanguage, DeveloperContribution
+from developers.models import Developer, Language, DeveloperLanguage, DeveloperContribution, DeveloperActivity
 from stats.models import (
     GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer,
     AuthorData, AuthorDataSerializer,
@@ -148,6 +148,8 @@ ORDER BY year;
         SELECT author_email,
         FIRST(author_name) AS author_name,
         COUNT(*) AS commit_count,
+        SUM(insertions) AS total_insertions,
+        SUM(deletions) AS total_deletions,
         CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
         CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
         FROM {p.name}
@@ -160,8 +162,8 @@ ORDER BY year;
             except AuthorData.DoesNotExist:
                 au = AuthorData(project=p, author_email=e[0])
 
-            au.author_email, au.author_name, au.commit_count = e[0], e[1], e[2]
-            au.first_commit_date, au.last_commit_date = timezone.make_aware(e[3]), timezone.make_aware(e[4])
+            au.author_email, au.author_name, au.commit_count, au.total_insertions, au.total_deletions = e[0], e[1], e[2], e[3], e[4]
+            au.first_commit_date, au.last_commit_date = timezone.make_aware(e[5]), timezone.make_aware(e[6])
             au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
             au.save()
 
@@ -172,6 +174,8 @@ ORDER BY year;
             dev.name = au.author_name
             dev.set_first_last_commit_at(au.first_commit_date, au.last_commit_date)
             dev.total_commits = au.commit_count
+            dev.total_insertions = au.total_insertions
+            dev.total_deletions = au.total_deletions
             dev.save()
             dev.add_a_project(p)
 
@@ -214,9 +218,14 @@ ORDER BY year;
                 # raise warning
                 continue
 
-            dev.daily_activity = get_author_daily_commit_count(email)
-            dev.weekly_activity = get_author_weekly_commit_count(email)
-            dev.save()
+            try:
+                dev_ac = DeveloperActivity.objects.get(developer=dev)
+            except DeveloperActivity.DoesNotExist:
+                dev_ac = DeveloperActivity(developer=dev)
+
+            dev_ac.daily_activity = get_author_daily_commit_count(email)
+            dev_ac.weekly_activity = get_author_weekly_commit_count(email)
+            dev_ac.save()
 
             for lang, cnt in get_most_used_langs(email):
                 try:

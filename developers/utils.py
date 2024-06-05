@@ -11,7 +11,7 @@ def log_normal_cdf(x):
 THRESHOLDS = [1, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100]
 LEVELS = ["S", "A+", "A", "A-", "B+", "B", "B-", "C+", "C"]
 
-def calculate_rank(total_commits, total_repos, contributed_days):
+def calculate_rank(total_commits, total_repos, contributed_days, total_modifications):
     commits_median = 250
     commits_weight = 2
 
@@ -21,17 +21,22 @@ def calculate_rank(total_commits, total_repos, contributed_days):
     contributed_days_median = 100
     contributed_days_weight = 3
 
+    modifications_median = 10000
+    modifications_weight = 2
+
     total_weight = (
         commits_weight +
         repos_weight +
-        contributed_days_weight
+        contributed_days_weight +
+        modifications_weight
     )
 
     rank = (
         1 - (
             commits_weight * exponential_cdf(total_commits / commits_median) +
             repos_weight * exponential_cdf(total_repos / repos_median) +
-            contributed_days_weight * exponential_cdf(contributed_days / contributed_days_median)
+            contributed_days_weight * exponential_cdf(contributed_days / contributed_days_median) +
+            modifications_weight * exponential_cdf(total_modifications / modifications_median)
         ) / total_weight
     )
 

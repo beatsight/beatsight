@@ -29,17 +29,16 @@ class Developer(TimestampedModel):
 
     first_commit_at = models.DateTimeField()
     last_commit_at = models.DateTimeField()
-    total_commits = models.IntegerField()
-    contributed_days = models.IntegerField()
-    total_projects = models.IntegerField()
+    contributed_days = models.IntegerField(default=0)
 
-    rank_level = models.CharField(max_length=10)
-    rank_percentile = models.FloatField()
+    total_commits = models.IntegerField(default=0)
+    total_insertions = models.IntegerField(default=0)
+    total_deletions = models.IntegerField(default=0)
 
-    # TODO: move to separate table
-    # commit counts in day/week
-    daily_activity = models.JSONField(default=list, encoder=DjangoJSONEncoder)
-    weekly_activity = models.JSONField(default=list, encoder=DjangoJSONEncoder)
+    total_projects = models.IntegerField(default=0)
+
+    rank_level = models.CharField(max_length=10, default='-')
+    rank_percentile = models.FloatField(default=0.0)
 
     def __str__(self):
         return f"{self.name} - {self.email}"
@@ -72,13 +71,19 @@ class Developer(TimestampedModel):
         self.save()
 
     def calculate_rank(self):
-        level, percentile = calculate_rank(self.total_commits, self.total_projects, self.contributed_days)
+        level, percentile = calculate_rank(self.total_commits, self.total_projects,
+                                           self.contributed_days, self.total_insertions + self.total_deletions)
         self.rank_level = level
         self.rank_percentile = percentile
         self.save()
 
     @property
     def recent_weekly_activity(self):
+        dev_ac = DeveloperActivity.objects.get(developer=self)
+        if dev_ac is None:
+            # TODO: add warning
+            return []
+
         # Get the Monday of the current week
         today = datetime.now(tz=dt.timezone.utc)
         this_monday = today - dt.timedelta(days=today.weekday())
@@ -88,7 +93,7 @@ class Developer(TimestampedModel):
 
         data_dict = defaultdict(int)
         # Iterate through the data and add the data to the dictionary
-        for item in self.weekly_activity:
+        for item in dev_ac.weekly_activity:
             # de-serialize jsondate string
             if isinstance(item['week'], datetime):
                 week_date = item['week']
@@ -105,6 +110,16 @@ class Developer(TimestampedModel):
 
         return filtered_data
 
+class DeveloperActivity(TimestampedModel):
+    developer = models.OneToOneField(Developer, on_delete=models.CASCADE, primary_key=True)
+
+    # commit counts in day/week
+    daily_activity = models.JSONField(default=list, encoder=DjangoJSONEncoder)
+    weekly_activity = models.JSONField(default=list, encoder=DjangoJSONEncoder)
+
+    def __str__(self):
+        return f"{self.developer.name}"
+
 
 class DeveloperLanguage(TimestampedModel):
     developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
@@ -113,6 +128,7 @@ class DeveloperLanguage(TimestampedModel):
 
     def __str__(self):
         return f"{self.developer.name} - {self.language.name}"
+
 
 class DeveloperContribution(TimestampedModel):
     developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
@@ -129,6 +145,11 @@ class LanguageSerializer(S.ModelSerializer):
     class Meta:
         model = Language
         fields = ['name']
+
+class DeveloperActivitySerializer(S.ModelSerializer):
+    class Meta:
+        model = DeveloperActivity
+        fields = ['daily_activity', 'weekly_activity']
 
 class DeveloperLanguageSerializer(S.ModelSerializer):
     language = LanguageSerializer(read_only=True)
@@ -166,13 +187,8 @@ class SimpleSerializer(S.ModelSerializer):
 class DetailSerializer(SimpleSerializer):
     projects = S.SerializerMethodField()
     developer_languages = DeveloperLanguageSerializer(source='developerlanguage_set', many=True, read_only=True)
-    # developer_contributions = DeveloperContributionSerializer(source='developercontribution_set', many=True, read_only=True)
-
+    developer_activity = S.SerializerMethodField()
     contribution = S.SerializerMethodField()
-
-    # def __init__(self, *args, **kwargs):
-    #     self.top_langs = kwargs.pop('top_langs', None)
-    #     super().__init__(*args, **kwargs)
 
     class Meta:
         model = Developer
@@ -190,3 +206,11 @@ class DetailSerializer(SimpleSerializer):
             serializer = DeveloperContributionSerializer(e)
             ret.append(serializer.data)
         return ret
+
+    def get_developer_activity(self, obj):
+        try:
+            res = DeveloperActivity.objects.get(developer=obj)
+            return DeveloperActivitySerializer(res).data
+        except DeveloperActivity.DoesNotExist:
+            # should never happen
+            assert False
