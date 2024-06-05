@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models import SyncInfo
+# from .models import SyncInfo
 
 
-class SyncInfoAdmin(admin.ModelAdmin):
-    pass
+# class SyncInfoAdmin(admin.ModelAdmin):
+#     pass
 
 
-admin.site.register(SyncInfo, SyncInfoAdmin)
+# admin.site.register(SyncInfo, SyncInfoAdmin)

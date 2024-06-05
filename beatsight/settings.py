@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'projects.apps.ProjectsConfig',
-    # 'repo_sync.apps.RepoSyncConfig',
+    'repo_sync.apps.RepoSyncConfig',
     'stats.apps.StatsConfig',
     'developers.apps.DevelopersConfig',
 ]

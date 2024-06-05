@@ -11,7 +11,7 @@ import pandas as pd
 
 from beatsight.utils.pl_ext import PL_EXT
 from projects.models import Project
-from developers.models import Developer, Language, DeveloperLanguage
+from developers.models import Developer, Language, DeveloperLanguage, DeveloperContribution
 from stats.models import (
     GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer,
     AuthorData, AuthorDataSerializer,
@@ -207,8 +207,17 @@ ORDER BY year;
             delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'")
         save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append")
 
-        # calculate users' most used languages
+        # calculate authors' activities, most used languages, contributions
         for email in daily_stats['author_email'].unique().tolist():
+            dev = Developer.objects.get(email=email)
+            if dev is None:
+                # raise warning
+                continue
+
+            dev.daily_activity = get_author_daily_commit_count(email)
+            dev.weekly_activity = get_author_weekly_commit_count(email)
+            dev.save()
+
             for lang, cnt in get_most_used_langs(email):
                 try:
                     lang_obj = Language.objects.get(name=lang)
@@ -216,17 +225,19 @@ ORDER BY year;
                     lang_obj = Language(name=lang)
                     lang_obj.save()
 
-                dev = Developer.objects.get(email=email)
-                if dev is None:
-                    # raise warning
-                    continue
-
                 try:
                     dev_lang = DeveloperLanguage.objects.get(developer=dev, language=lang_obj)
                 except DeveloperLanguage.DoesNotExist:
                     dev_lang = DeveloperLanguage(developer=dev, language=lang_obj)
                 dev_lang.use_count = cnt
                 dev_lang.save()
+
+            try:
+                dev_contrib = DeveloperContribution.objects.get(developer=dev, project=p)
+            except DeveloperContribution.DoesNotExist:
+                dev_contrib = DeveloperContribution(developer=dev, project=p)
+            dev_contrib.daily_contribution = get_author_daily_contributions(email, p)
+            dev_contrib.save()
 
     # show the data
     gd_s = GeneralDataSerializer(gd)
@@ -242,6 +253,8 @@ ORDER BY year;
         # 'files': fd_s.data if fd_s else {},
     }
 
+
+## user related
 def get_most_used_langs(email):
     sql = f"""
     select file_exts from author_daily_commits where author_email = '{email}'
@@ -265,6 +278,72 @@ def get_most_used_langs(email):
     #     percentage = (value / total_count) * 100
     #     top_langs[key] = f"{percentage:.2f}%"
     # return top_langs
+
+def get_author_weekly_commit_count(email):
+    sql = f'''
+SELECT
+    DATE_TRUNC('week', author_date) AS week_start_date,
+    SUM(daily_commit_count) AS weekly_commit_count_sum
+FROM
+    author_daily_commits
+WHERE
+    author_email = '{email}'
+GROUP BY
+    week_start_date
+ORDER BY
+    week_start_date
+    '''
+    weekly_commit_count = []
+    for e in fetch_from_duckdb(sql):
+        weekly_commit_count.append({
+            'week': e[0],
+            'commit_count': e[1],
+        })
+
+    return weekly_commit_count
+
+def get_author_daily_commit_count(email):
+    sql = f'''
+SELECT
+    author_date,
+    SUM(daily_commit_count) AS weekly_commit_count_sum
+FROM
+    author_daily_commits
+WHERE
+    author_email = '{email}'
+GROUP BY
+    author_date
+ORDER BY
+    author_date
+    '''
+    daily_commit_count = []
+    for e in fetch_from_duckdb(sql):
+        daily_commit_count.append({
+            'date': e[0],
+            'commit_count': e[1],
+        })
+
+    return daily_commit_count
+
+def get_author_daily_contributions(email, proj):
+    daily_contributions = []
+    for e in fetch_from_duckdb(
+        f''' select author_date,
+        SUM(daily_commit_count) as daily_commit_count,
+        SUM(insertions) as daily_insertions,
+        SUM(deletions) as daily_deletions,
+        from author_daily_commits
+        where project = '{proj.name}' and author_email = '{email}'
+        group by author_date order by author_date;
+        '''
+    ):
+        daily_contributions.append({
+            'author_date': e[0],
+            'daily_commit_count': e[1],
+            'daily_insertions': e[2],
+            'daily_deletionts': e[3],
+        })
+    return daily_contributions
 
 
 def index(request):

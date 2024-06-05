@@ -1,6 +1,6 @@
-from django.db import models
+# from django.db import models
 
-from projects.models import Project
+# from projects.models import Project
 
 
 # class SyncInfo(models.Model):
