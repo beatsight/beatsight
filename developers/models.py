@@ -12,6 +12,7 @@ from beatsight.models import TimestampedModel
 from projects.models import Project
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 
+from .utils import calculate_rank
 
 class Language(TimestampedModel):
     name = models.CharField(max_length=255, primary_key=True)
@@ -30,6 +31,10 @@ class Developer(TimestampedModel):
     last_commit_at = models.DateTimeField()
     total_commits = models.IntegerField()
     contributed_days = models.IntegerField()
+    total_projects = models.IntegerField()
+
+    rank_level = models.CharField(max_length=10)
+    rank_percentile = models.FloatField()
 
     # TODO: move to separate table
     # commit counts in day/week
@@ -44,6 +49,7 @@ class Developer(TimestampedModel):
             self.status = "inactive"
         else:
             self.status = "active"
+        self.total_projects = len(self.projects.all())
 
         return super().save(*args, **kwargs)
 
@@ -63,6 +69,13 @@ class Developer(TimestampedModel):
 
     def add_a_project(self, p):
         self.projects.add(p)
+        self.save()
+
+    def calculate_rank(self):
+        level, percentile = calculate_rank(self.total_commits, self.total_projects, self.contributed_days)
+        self.rank_level = level
+        self.rank_percentile = percentile
+        self.save()
 
     @property
     def recent_weekly_activity(self):
@@ -109,6 +122,8 @@ class DeveloperContribution(TimestampedModel):
     def __str__(self):
         return f"{self.developer.name} - {self.project.name}"
 
+
+########## serializers
 
 class LanguageSerializer(S.ModelSerializer):
     class Meta:

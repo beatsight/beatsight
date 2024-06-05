@@ -239,6 +239,8 @@ ORDER BY year;
             dev_contrib.daily_contribution = get_author_daily_contributions(email, p)
             dev_contrib.save()
 
+            dev.calculate_rank()
+
     # show the data
     gd_s = GeneralDataSerializer(gd)
     ac_s = ActivityDataSerializer(ac)
