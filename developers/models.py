@@ -30,6 +30,8 @@ class Developer(TimestampedModel):
     first_commit_at = models.DateTimeField()
     last_commit_at = models.DateTimeField()
     contributed_days = models.IntegerField(default=0)
+    active_days = models.IntegerField(default=0)  # days that have code commits
+    active_days_ratio = models.FloatField(default=0)
 
     total_commits = models.IntegerField(default=0)
     total_insertions = models.IntegerField(default=0)
@@ -49,6 +51,8 @@ class Developer(TimestampedModel):
         else:
             self.status = "active"
         self.total_projects = len(self.projects.all())
+        self.contributed_days = (self.last_commit_at - self.first_commit_at).days + 1
+        self.active_days_ratio = 0 if self.contributed_days == 0 else self.active_days / self.contributed_days
 
         return super().save(*args, **kwargs)
 
@@ -57,14 +61,13 @@ class Developer(TimestampedModel):
             self.first_commit_at = first_dt
 
         if first_dt < self.first_commit_at:
-                self.first_commit_at = first_dt
+            self.first_commit_at = first_dt
 
         if self.last_commit_at is None:
             self.last_commit_at = last_dt
 
         if last_dt > self.last_commit_at:
             self.last_commit_at = last_dt
-        self.contributed_days = (self.last_commit_at - self.first_commit_at).days + 1
 
     def add_a_project(self, p):
         self.projects.add(p)
@@ -72,7 +75,8 @@ class Developer(TimestampedModel):
 
     def calculate_rank(self):
         level, percentile = calculate_rank(self.total_commits, self.total_projects,
-                                           self.contributed_days, self.total_insertions + self.total_deletions)
+                                           self.active_days_ratio,
+                                           self.total_insertions + self.total_deletions)
         self.rank_level = level
         self.rank_percentile = percentile
         self.save()

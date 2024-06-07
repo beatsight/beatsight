@@ -1,5 +1,6 @@
 import json
 import sys
+import datetime as dt
 from datetime import datetime
 from collections import defaultdict
 
@@ -144,38 +145,50 @@ ORDER BY year;
         ### authors stat (insertions, deletions, commits_count, active_days_count ...)
         # author_data = data['authors']
 
+        # sql = f'''
+        # SELECT author_email,
+        # FIRST(author_name) AS author_name,
+        # COUNT(*) AS commit_count,
+        # SUM(insertions) AS total_insertions,
+        # SUM(deletions) AS total_deletions,
+        # CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
+        # CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
+        # COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
+        # FROM {p.name}
+        # GROUP BY author_email
+        # ORDER BY commit_count DESC;
+        # '''
+
         sql = f'''
         SELECT author_email,
         FIRST(author_name) AS author_name,
-        COUNT(*) AS commit_count,
-        SUM(insertions) AS total_insertions,
-        SUM(deletions) AS total_deletions,
         CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
         CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
         FROM {p.name}
-        GROUP BY author_email
-        ORDER BY commit_count DESC;
+        GROUP BY author_email;
         '''
         for e in fetch_from_duckdb(sql):
-            try:
-                au = AuthorData.objects.get(project=p, author_email=e[0])
-            except AuthorData.DoesNotExist:
-                au = AuthorData(project=p, author_email=e[0])
+            # try:
+            #     au = AuthorData.objects.get(project=p, author_email=e[0])
+            # except AuthorData.DoesNotExist:
+            #     au = AuthorData(project=p, author_email=e[0])
 
-            au.author_email, au.author_name, au.commit_count, au.total_insertions, au.total_deletions = e[0], e[1], e[2], e[3], e[4]
-            au.first_commit_date, au.last_commit_date = timezone.make_aware(e[5]), timezone.make_aware(e[6])
-            au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
-            au.save()
+            # au.author_email, au.author_name, au.commit_count, au.total_insertions, au.total_deletions = e[0], e[1], e[2], e[3], e[4]
+            # au.first_commit_date, au.last_commit_date = timezone.make_aware(e[5]), timezone.make_aware(e[6])
+            # au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
+            # au.active_days = e[7]
+            # au.save()
 
             try:
-                dev = Developer.objects.get(email=au.author_email)
+                dev = Developer.objects.get(email=e[0])
             except Developer.DoesNotExist:
-                dev = Developer(email=au.author_email)
-            dev.name = au.author_name
-            dev.set_first_last_commit_at(au.first_commit_date, au.last_commit_date)
-            dev.total_commits = au.commit_count
-            dev.total_insertions = au.total_insertions
-            dev.total_deletions = au.total_deletions
+                dev = Developer(email=e[0])
+            dev.name = e[1]
+            dev.set_first_last_commit_at(timezone.make_aware(e[2]), timezone.make_aware(e[3]))
+            # dev.total_commits = au.commit_count
+            # dev.total_insertions = au.total_insertions
+            # dev.total_deletions = au.total_deletions
+            # dev.active_days = au.active_days
             dev.save()
             dev.add_a_project(p)
 
@@ -218,6 +231,8 @@ ORDER BY year;
                 # raise warning
                 continue
 
+            populate_general_data(dev)
+
             try:
                 dev_ac = DeveloperActivity.objects.get(developer=dev)
             except DeveloperActivity.DoesNotExist:
@@ -248,8 +263,6 @@ ORDER BY year;
             dev_contrib.daily_contribution = get_author_daily_contributions(email, p)
             dev_contrib.save()
 
-            dev.calculate_rank()
-
     # show the data
     gd_s = GeneralDataSerializer(gd)
     ac_s = ActivityDataSerializer(ac)
@@ -266,6 +279,29 @@ ORDER BY year;
 
 
 ## user related
+def populate_general_data(dev):
+    sql = f"""
+SELECT
+    MIN(author_date) AS earliest_author_date,
+    MAX(author_date) AS latest_author_date,
+    SUM(daily_commit_count) AS total_commit_count,
+    SUM(insertions) AS total_insertions,
+    SUM(deletions) AS total_deletions,
+    COUNT(DISTINCT author_date) AS distinct_author_date_count
+FROM
+    author_daily_commits
+WHERE
+    author_email = '{dev.email}';
+    """
+    for e in fetch_from_duckdb(sql):
+        dev.total_commits = e[2]
+        dev.total_insertions = e[3]
+        dev.total_deletions = e[4]
+        dev.active_days = e[5]
+        dev.save()
+
+    dev.calculate_rank()
+
 def get_most_used_langs(email):
     sql = f"""
     select file_exts from author_daily_commits where author_email = '{email}'

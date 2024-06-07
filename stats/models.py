@@ -166,7 +166,7 @@ class AuthorData(models.Model):
     last_commit_date = models.DateTimeField()
 
     contributed_days = models.IntegerField()
-    # active_days_count = models.IntegerField()
+    active_days = models.IntegerField()
 
     # _authors_statistics = models.TextField(default=default_json_list)  # JSON field
 
