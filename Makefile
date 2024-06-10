@@ -46,11 +46,20 @@ json:
 docker.build:
 	docker-compose -f docker/docker-compose.dev.yaml build app
 
+docker.build.web:
+	docker-compose -f docker/docker-compose.dev.yaml build web
+
 docker.up:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up app
 
+docker.up.web:
+	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up web
+
 docker.sh:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml exec app bash
+
+docker.sh.web:
+	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml exec web bash
 
 docker.down:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml down

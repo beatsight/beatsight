@@ -19,9 +19,22 @@ services:
       - ../../../dev/17zuoye/gemserver:/gemserver
       - ../../../dev/17zuoye/question-bank:/question-bank
       - ../../../dev/17zuoye/aquarius:/aquarius
-
     ports:
       - "8081:8081"
+    networks:
+      - beatsight-main
+
+  web:
+    container_name: beatsight_web_dev
+    build:
+      context: ..
+      dockerfile: docker/web-Dockerfile-dev
+    image: beatsight-web:dev
+    entrypoint: ["tail", "-f", "/dev/null"]
+    volumes:
+      - ../web:/web
+    ports:
+      - "4200:4200"
     networks:
       - beatsight-main
 
