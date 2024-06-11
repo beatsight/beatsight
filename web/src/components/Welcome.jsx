@@ -1,6 +1,8 @@
 import Sammy from "../assets/small-profile.jpeg"
 import AcmeLogo from "../ui/acme-logo.jsx"
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import heroDesktop from "../assets/hero-desktop.png"
+import heroMobile from "../assets/hero-mobile.png"
 
 export default function Welcome() {
   return (
@@ -27,12 +29,25 @@ export default function Welcome() {
       <span>Log in</span> <ArrowRightIcon className="w-5 md:w-6" />
       </a>
 
-    </div>
-      <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-      {/* Add Hero Images Here */}
-    </div>
+        </div>
+        <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
+          <img
+            src={heroDesktop}
+            width="1000"
+            height="760"
+            alt="Screenshots of the dashboard project showing desktop version"
+            className="hidden md:block"
+          />
+          <img
+            src={heroMobile}
+            width="560"
+            height="620"
+            alt="Screenshots of the dashboard project showing mobile version"
+            className="block md:hidden"
+          />
+        </div>
       </div>
-      </main>
+    </main>
 
   );
 }
