@@ -50,7 +50,6 @@ class Developer(TimestampedModel):
             self.status = "inactive"
         else:
             self.status = "active"
-        self.total_projects = len(self.projects.all())
         self.contributed_days = (self.last_commit_at - self.first_commit_at).days + 1
         self.active_days_ratio = 0 if self.contributed_days == 0 else self.active_days / self.contributed_days
 
@@ -71,6 +70,7 @@ class Developer(TimestampedModel):
 
     def add_a_project(self, p):
         self.projects.add(p)
+        self.total_projects = len(self.projects.all())
         self.save()
 
     def calculate_rank(self):
