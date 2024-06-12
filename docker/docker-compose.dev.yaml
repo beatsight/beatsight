@@ -14,6 +14,7 @@ services:
     volumes:
       - ..:/Users/xiez/dev/beatsight
       - /Users/xiez/src/seahub:/seahub
+      - /Users/xiez/dev/SICP-exercises:/sicp
       - ../../../dev/17zuoye/bank:/bank
       - ../../../dev/17zuoye/ferrum:/ferrum
       - ../../../dev/17zuoye/gemserver:/gemserver

@@ -1,22 +1,34 @@
-import Welcome from "./components/Welcome"
-import styles from './ui/home.module.css';
+import React, { lazy, useEffect } from 'react'
+import './App.css';
+import { BrowserRouter as Router, Route, Routes, Navigate  } from 'react-router-dom'
+// import { themeChange } from 'theme-change'
+
+
+// Importing pages
+const Layout = lazy(() => import('./containers/Layout'))
+const ErrorPage = lazy(() => import('./pages/protected/404'))
+
 
 export default function App() {
+  // useEffect(() => {
+  //   // 👆 daisy UI themes initialization
+  //   themeChange(false)
+  // }, [])
+  
   return (
       <>
-      <Welcome />
+      <Router>
+        <Routes>
 
-      <div
-        className="h-0 w-0 border-b-[30px] border-l-[20px] border-r-[20px] border-b-black border-l-transparent border-r-transparent"
-        />
+          <Route path="/" element={<Navigate to="/projects" replace />} />
 
-      <div className={styles.shape} />
+          <Route path="/*" element={<Layout />} />
+          {/* <Route path="/developers/\*" element={<Layout />} /> */}
 
-      
-      <p className="font-['Lusitana'] ">
-        This is with Font Link. We are linking the fonts from the Google Fonts.
-        </p>
+          {/* <Route path="*" element={<ErrorPage />}/> */}
 
+        </Routes>
+      </Router>
       </>
   );
 

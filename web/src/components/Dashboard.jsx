@@ -1,4 +1,5 @@
 import SideNav from "./SideNav.jsx"
+// import { lusitana } from '../fonts';
 
 export default function Dashboard() {
   return (
@@ -7,7 +8,10 @@ export default function Dashboard() {
         <SideNav />
       </div>
       <div className="grow p-6 md:overflow-y-auto md:p-12">
-        Dashboard page
+        <h1 className="mb-4 text-xl md:text-2xl">
+          Dashboard
+        </h1>
+
       </div>
     </div>    
   );
