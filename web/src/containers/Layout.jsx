@@ -1,5 +1,6 @@
 import PageContent from "./PageContent"
 import LeftSidebar from "./LeftSidebar"
+import ModalLayout from "./ModalLayout"
 
 function Layout(){
   // const dispatch = useDispatch()
@@ -30,8 +31,8 @@ function Layout(){
         {/* {/\** Notification layout container *\/} */}
         {/* <NotificationContainer /> */}
 
-      {/* {/\* Modal layout container *\/} */}
-      {/*   <ModalLayout /> */}
+      {/* Modal layout container */}
+        <ModalLayout />
 
       </>
     )

@@ -2,12 +2,17 @@ import React, { lazy, useEffect } from 'react'
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, Navigate  } from 'react-router-dom'
 // import { themeChange } from 'theme-change'
+import initializeApp from './app/init';
 
 
 // Importing pages
 const Layout = lazy(() => import('./containers/Layout'))
 const Login = lazy(() => import('./pages/Login'))
 const ErrorPage = lazy(() => import('./pages/protected/404'))
+
+
+// Initializing different libraries
+initializeApp()
 
 
 export default function App() {

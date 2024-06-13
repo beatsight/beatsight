@@ -17,4 +17,13 @@ export default defineConfig({
   resolve: {
     extensions: ['.js', '.jsx']
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081/',
+        changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/api/, 'api')
+      }
+    }
+  }
 })

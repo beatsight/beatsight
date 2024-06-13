@@ -1,7 +1,14 @@
-/** Icons are imported separatly to reduce build time */
+/** Icons are imported separatly to reduce build time
+
+icons ref:
+- https://heroicons.com/outline
+- https://unpkg.com/browse/@heroicons/react@2.1.3/24/outline/
+ */
 import BellIcon from '@heroicons/react/24/outline/BellIcon'
 import DocumentTextIcon from '@heroicons/react/24/outline/DocumentTextIcon'
 import Squares2X2Icon from '@heroicons/react/24/outline/Squares2X2Icon'
+import CodeBracketSquareIcon from '@heroicons/react/24/outline/CodeBracketSquareIcon'
+import UsersIcon from '@heroicons/react/24/outline/UsersIcon'
 
 // import TableCellsIcon from '@heroicons/react/24/outline/TableCellsIcon'
 // import WalletIcon from '@heroicons/react/24/outline/WalletIcon'
@@ -27,13 +34,13 @@ const routes = [
 
   {
     path: '/projects',
-    icon: <Squares2X2Icon className={iconClasses}/>, 
+    icon: <CodeBracketSquareIcon className={iconClasses}/>,
     name: 'Proejcts',
   },
 
   {
     path: '/developers',
-    icon: <Squares2X2Icon className={iconClasses}/>, 
+    icon: <UsersIcon className={iconClasses}/>, 
     name: 'Developers',
   },
 
