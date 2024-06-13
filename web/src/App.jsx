@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate  } from 'react-router-
 
 // Importing pages
 const Layout = lazy(() => import('./containers/Layout'))
+const Login = lazy(() => import('./pages/Login'))
 const ErrorPage = lazy(() => import('./pages/protected/404'))
 
 
@@ -21,6 +22,7 @@ export default function App() {
         <Routes>
 
           <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/login" element={<Login />} />
 
           <Route path="/*" element={<Layout />} />
           {/* <Route path="/developers/\*" element={<Layout />} /> */}

@@ -1,6 +1,6 @@
 // import { themeChange } from 'theme-change'
 import React, {  useEffect, useState } from 'react'
-// import { useSelector, useDispatch } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import BellIcon  from '@heroicons/react/24/outline/BellIcon'
 import Bars3Icon  from '@heroicons/react/24/outline/Bars3Icon'
 import MoonIcon from '@heroicons/react/24/outline/MoonIcon'
@@ -13,7 +13,7 @@ import { NavLink,  Routes, Link , useLocation} from 'react-router-dom'
 function Header(){
 
     // const dispatch = useDispatch()
-    // const {noOfNotifications, pageTitle} = useSelector(state => state.header)
+    const {noOfNotifications, pageTitle} = useSelector(state => state.header)
     // const [currentTheme, setCurrentTheme] = useState(localStorage.getItem("theme"))
 
     // useEffect(() => {
@@ -51,7 +51,7 @@ function Header(){
                 <div className="flex-1">
                     <label htmlFor="left-sidebar-drawer" className="btn btn-primary drawer-button lg:hidden">
                     <Bars3Icon className="h-5 inline-block w-5"/></label>
-                    <h1 className="text-2xl font-semibold ml-2">Test</h1>
+                    <h1 className="text-2xl font-semibold ml-2">{pageTitle}</h1>
                 </div>
 
                 

@@ -8,6 +8,10 @@ import './index.css'
 
 import SuspenseContent from './containers/SuspenseContent';
 import App from './App.jsx'
+
+import store from './app/store'
+import { Provider } from 'react-redux'
+
 // import Dashboard from './components/Dashboard.jsx'
 // import Invoices from './components/Invoices.jsx'
 // import ErrorPage from './components/ErrorPage.jsx'
@@ -37,7 +41,9 @@ import App from './App.jsx'
 const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(
     <Suspense fallback={<SuspenseContent />}>
-      <App />
+        <Provider store={store}>
+            <App />
+        </Provider>
     </Suspense>
 )
 
