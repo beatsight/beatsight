@@ -13,29 +13,29 @@ from projects.models import Project
 from .utils import CustomJSONEncoder
 
 
-class GeneralData(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+# class GeneralData(models.Model):
+#     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
-    commits_count = models.IntegerField(default=0)
-    active_days_count = models.IntegerField(default=0)
-    age = models.IntegerField(default=0)
-    files_count = models.IntegerField(default=0)
-    first_commit_id = models.CharField(max_length=50)
-    last_commit_id = models.CharField(max_length=50)
-    first_commit_at = models.DateTimeField()
-    last_commit_at = models.DateTimeField()
+#     commits_count = models.IntegerField(default=0)
+#     active_days_count = models.IntegerField(default=0)
+#     age = models.IntegerField(default=0)
+#     files_count = models.IntegerField(default=0)
+#     first_commit_id = models.CharField(max_length=50)
+#     last_commit_id = models.CharField(max_length=50)
+#     first_commit_at = models.DateTimeField()
+#     last_commit_at = models.DateTimeField()
 
 
-class GeneralDataSerializer(S.ModelSerializer):
-    project_name = S.CharField(source='project.name')
-    # age = S.SerializerMethodField()
+# class GeneralDataSerializer(S.ModelSerializer):
+#     project_name = S.CharField(source='project.name')
+#     # age = S.SerializerMethodField()
 
-    class Meta:
-        model = GeneralData
-        exclude = ['id', 'project', ]
+#     class Meta:
+#         model = GeneralData
+#         exclude = ['id', 'project', ]
 
-    # def get_age(self, obj):
-    #     return obj.age
+#     # def get_age(self, obj):
+#     #     return obj.age
 
 
 default_json_list = json.dumps([])
@@ -156,45 +156,45 @@ class ActivityDataSerializer(S.ModelSerializer):
     #     return obj.hourly_activity
 
 
-class AuthorData(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+# class AuthorData(models.Model):
+#     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
-    author_email = models.CharField(max_length=50)
-    author_name = models.CharField(max_length=50)
-    commit_count = models.IntegerField(default=0)
-    first_commit_date = models.DateTimeField()
-    last_commit_date = models.DateTimeField()
+#     author_email = models.CharField(max_length=50)
+#     author_name = models.CharField(max_length=50)
+#     commit_count = models.IntegerField(default=0)
+#     first_commit_date = models.DateTimeField()
+#     last_commit_date = models.DateTimeField()
 
-    contributed_days = models.IntegerField()
-    active_days = models.IntegerField()
+#     contributed_days = models.IntegerField()
+#     active_days = models.IntegerField()
 
-    # _authors_statistics = models.TextField(default=default_json_list)  # JSON field
+#     # _authors_statistics = models.TextField(default=default_json_list)  # JSON field
 
-    # def get_authors_statistics(self):
-    #     if self._authors_statistics:
-    #         return json.loads(self._authors_statistics)
-    #     else:
-    #         return {}
+#     # def get_authors_statistics(self):
+#     #     if self._authors_statistics:
+#     #         return json.loads(self._authors_statistics)
+#     #     else:
+#     #         return {}
 
-    # def set_authors_statistics(self, val: List):
-    #     self._authors_statistics = json.dumps(val, cls=CustomJSONEncoder)
+#     # def set_authors_statistics(self, val: List):
+#     #     self._authors_statistics = json.dumps(val, cls=CustomJSONEncoder)
 
-    # authors_statistics = property(get_authors_statistics, set_authors_statistics)
+#     # authors_statistics = property(get_authors_statistics, set_authors_statistics)
 
 
-class AuthorDataSerializer(S.ModelSerializer):
-    project_name = S.CharField(source='project.name')
-    # authors_statistics = S.SerializerMethodField()
+# class AuthorDataSerializer(S.ModelSerializer):
+#     project_name = S.CharField(source='project.name')
+#     # authors_statistics = S.SerializerMethodField()
 
-    class Meta:
-        model = AuthorData
-        exclude = [
-            'id', 'project',
-            # '_authors_statistics',
-        ]
+#     class Meta:
+#         model = AuthorData
+#         exclude = [
+#             'id', 'project',
+#             # '_authors_statistics',
+#         ]
 
-    # def get_authors_statistics(self, obj):
-    #     return obj.authors_statistics
+#     # def get_authors_statistics(self, obj):
+#     #     return obj.authors_statistics
 
 
 class FileData(models.Model):

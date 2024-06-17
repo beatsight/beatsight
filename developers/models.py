@@ -138,6 +138,7 @@ class DeveloperContribution(TimestampedModel):
     developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     daily_contribution = models.JSONField(default=list, encoder=DjangoJSONEncoder)
+    commits_count = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.developer.name} - {self.project.name}"
@@ -170,7 +171,7 @@ class DeveloperContributionSerializer(S.ModelSerializer):
 
     class Meta:
         model = DeveloperContribution
-        fields = ['project_name', 'developer_name', 'developer_email', 'daily_contribution']
+        fields = ['project_name', 'developer_name', 'developer_email', 'daily_contribution', 'commits_count']
 
 
 class SimpleSerializer(S.ModelSerializer):

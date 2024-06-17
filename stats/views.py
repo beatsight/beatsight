@@ -11,11 +11,15 @@ from django.utils.timezone import get_current_timezone
 import pandas as pd
 
 from beatsight.utils.pl_ext import PL_EXT
-from projects.models import Project
-from developers.models import Developer, Language, DeveloperLanguage, DeveloperContribution, DeveloperActivity
+from projects.models import Project, DetailSerializer, SimpleSerializer
+from developers.models import (
+    Developer, Language, DeveloperLanguage, DeveloperContribution, DeveloperContributionSerializer,
+    DeveloperActivity
+)
 from stats.models import (
-    GeneralData, GeneralDataSerializer, ActivityData, ActivityDataSerializer,
-    AuthorData, AuthorDataSerializer,
+    # GeneralData, GeneralDataSerializer,
+    ActivityData, ActivityDataSerializer,
+    # AuthorData, AuthorDataSerializer,
     # FileData, FileDataSerializer,
 )
 from vendor.repostat.analysis.gitrepository import GitRepository
@@ -44,12 +48,13 @@ def get_a_project_stat(p: Project, force=False):
         p.save()
 
         ### general data
-        try:
-            gd = GeneralData.objects.get(project=p)
-        except GeneralData.DoesNotExist:
-            gd = GeneralData(project=p)
+        # try:
+        #     gd = GeneralData.objects.get(project=p)
+        # except GeneralData.DoesNotExist:
+        #     gd = GeneralData(project=p)
 
-        gd.files_count = repo.head.files_count
+        p.files_count = repo.head.files_count
+        print(repo.head.files_extensions_summary)
 
         sql = f''' SELECT
   commit_sha,
@@ -62,7 +67,7 @@ LIMIT 1;
         '''
         res = fetch_from_duckdb(sql)
         assert len(res) == 1
-        gd.first_commit_id, gd.first_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
+        p.first_commit_id, p.first_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
 
         sql = f''' SELECT
   commit_sha,
@@ -75,8 +80,8 @@ LIMIT 1;
         '''
         res = fetch_from_duckdb(sql)
         assert len(res) == 1
-        gd.last_commit_id, gd.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
-        gd.age = (gd.last_commit_at - gd.first_commit_at).days
+        p.last_commit_id, p.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
+        p.age = (p.last_commit_at - p.first_commit_at).days
 
         sql = f''' SELECT
   COUNT(*) AS total_commits,
@@ -86,8 +91,9 @@ FROM
 '''
         res = fetch_from_duckdb(sql)
         assert len(res) == 1
-        gd.commits_count, gd.active_days_count = res[0]
-        gd.save()
+        p.commits_count, p.active_days_count = res[0]
+        p.save()
+        p.refresh_from_db()
 
         ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
         # activity_data = data['activity']
@@ -261,17 +267,19 @@ ORDER BY year;
             except DeveloperContribution.DoesNotExist:
                 dev_contrib = DeveloperContribution(developer=dev, project=p)
             dev_contrib.daily_contribution = get_author_daily_contributions(email, p)
+            dev_contrib.commits_count = sum(e['daily_commit_count'] for e in dev_contrib.daily_contribution)
             dev_contrib.save()
 
     # show the data
-    gd_s = GeneralDataSerializer(gd)
+    p_s = SimpleSerializer(p)
+    # gd_s = GeneralDataSerializer(gd)
     ac_s = ActivityDataSerializer(ac)
     author_data = []
-    for e in AuthorData.objects.filter(project=p):
-        author_data.append(AuthorDataSerializer(e).data)
+    for e in DeveloperContribution.objects.filter(project=p):
+        author_data.append(DeveloperContributionSerializer(e).data)
 
     return {
-        'general': gd_s.data,
+        'general': p_s.data,
         'activity': ac_s.data,
         'authors': author_data,
         # 'files': fd_s.data if fd_s else {},

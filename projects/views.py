@@ -2,16 +2,15 @@ import json
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
-
-from stats.models import GeneralData, ActivityData, AuthorData, AuthorDataSerializer
-from stats.utils import fetch_from_duckdb
-from beatsight.utils import CustomJSONEncoder
-
-from developers.models import DeveloperContribution, DeveloperContributionSerializer
-from .models import Project, SimpleSerializer, DetailSerializer
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
 
+from stats.models import ActivityData
+from stats.utils import fetch_from_duckdb
+from beatsight.utils import CustomJSONEncoder
+from developers.models import DeveloperContribution, DeveloperContributionSerializer
+
+from .models import Project, SimpleSerializer, DetailSerializer
 
 @csrf_exempt
 def index(request):
@@ -34,22 +33,16 @@ def index(request):
     res = []
     for p in Project.objects.all():
         try:
-            gd = GeneralData.objects.get(project=p)
-        except GeneralData.DoesNotExist:
-            gd = None
-        last_commit_at = gd.last_commit_at if gd else None
-
-        try:
             ac = ActivityData.objects.get(project=p)
         except ActivityData.DoesNotExist:
             ac = None
         recent_weekly_activity = ac.recent_weekly_activity if ac else None
 
         ss = SimpleSerializer(
-            p, last_commit_at=last_commit_at, recent_weekly_activity=recent_weekly_activity
+            p, recent_weekly_activity=recent_weekly_activity
         )
         res.append(ss.data)
-    print(res)
+
     return JsonResponse(res, safe=False)
     # return HttpResponse(json.dumps(res, cls=CustomJSONEncoder),
     #                     content_type='application/json')
@@ -73,28 +66,24 @@ def detail(request, proj):
         res = SimpleSerializer(p).data
         return JsonResponse(res, safe=False)
 
-
-    try:
-        gd = GeneralData.objects.get(project=p)
-    except GeneralData.DoesNotExist:
-        gd = None
-    last_commit_at = gd.last_commit_at if gd else None
-
     try:
         ac = ActivityData.objects.get(project=p)
     except ActivityData.DoesNotExist:
         ac = None
+    weekly_activity = ac.weekly_activity if ac else None
     recent_weekly_activity = ac.recent_weekly_activity if ac else None
 
     authors = []
-    for e in AuthorData.objects.filter(project=p):
-        authors.append(AuthorDataSerializer(e).data)
-
-    top_authors_statistics = authors[:10]
+    for e in DeveloperContribution.objects.filter(project=p):
+        authors.append(DeveloperContributionSerializer(e).data)
+    commits_total = sum(e['commits_count'] for e in authors)
+    for e in authors:
+        e['percentage'] = round(e['commits_count'] / commits_total * 100, 1)
+    authors = sorted(authors, key=lambda x: x['commits_count'], reverse=True)
 
     s = DetailSerializer(
-        p, last_commit_at=last_commit_at, recent_weekly_activity=recent_weekly_activity,
-        top_authors_statistics=top_authors_statistics
+        p, weekly_activity=weekly_activity, recent_weekly_activity=recent_weekly_activity,
+        authors_statistics=authors
     )
     return JsonResponse(s.data, safe=False)
     # return HttpResponse(json.dumps(res), content_type='application/json')
