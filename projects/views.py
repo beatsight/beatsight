@@ -9,11 +9,29 @@ from beatsight.utils import CustomJSONEncoder
 
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 from .models import Project, SimpleSerializer, DetailSerializer
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_exempt
 
+
+@csrf_exempt
 def index(request):
     """list all projects"""
-    res = []
+    if request.method == 'POST':
+        req_data = json.loads(request.body)
+        repo_url = req_data['repo_url'].strip()
+        name = req_data['name'].strip()
+        repo_branch = req_data['repo_branch'].strip()
 
+        p = Project(name=name, repo_url=repo_url, repo_path='', branch=repo_branch)
+        p.save()
+        p.refresh_from_db()
+
+        res = SimpleSerializer(p).data
+        return JsonResponse(res, safe=False)
+
+
+    # get
+    res = []
     for p in Project.objects.all():
         try:
             gd = GeneralData.objects.get(project=p)
@@ -31,14 +49,30 @@ def index(request):
             p, last_commit_at=last_commit_at, recent_weekly_activity=recent_weekly_activity
         )
         res.append(ss.data)
-
+    print(res)
     return JsonResponse(res, safe=False)
     # return HttpResponse(json.dumps(res, cls=CustomJSONEncoder),
     #                     content_type='application/json')
 
+@csrf_exempt
 def detail(request, proj):
     """get detail of a project (recent activity, top authors ...)"""
     p = get_object_or_404(Project, name=proj)
+    if request.method == 'DELETE':
+        p.delete()
+        return JsonResponse({})
+
+    elif request.method == 'POST':
+        req_data = json.loads(request.body)
+        p.name = req_data['name'].strip()
+        p.repo_url = req_data['repo_url'].strip()
+        p.repo_branch = req_data['repo_branch'].strip()
+        p.save()
+        p.refresh_from_db()
+
+        res = SimpleSerializer(p).data
+        return JsonResponse(res, safe=False)
+
 
     try:
         gd = GeneralData.objects.get(project=p)

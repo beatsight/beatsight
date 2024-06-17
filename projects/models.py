@@ -5,7 +5,7 @@ class Project(models.Model):
     name = models.CharField(max_length=200, unique=True)
     repo_url = models.CharField(max_length=1000)    # github/gitlab url
     repo_path = models.CharField(max_length=1000)  # repo local path
-    branch = models.CharField(max_length=100, default='master')      # master/dev/...
+    repo_branch = models.CharField(max_length=100, default='master')      # master/dev/...
     head_commit = models.CharField(max_length=50, default=None, null=True)
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(null=True)
@@ -19,7 +19,7 @@ class SimpleSerializer(S.ModelSerializer):
 
     class Meta:
         model = Project
-        exclude = ['id', ]
+        exclude = []
 
     def __init__(self, *args, **kwargs):
         self.last_commit_at = kwargs.pop('last_commit_at', None)
@@ -37,7 +37,7 @@ class DetailSerializer(SimpleSerializer):
 
     class Meta:
         model = Project
-        exclude = ['id', ]
+        exclude = []
 
     def __init__(self, *args, **kwargs):
         self.top_authors_statistics = kwargs.pop('top_authors_statistics', None)
