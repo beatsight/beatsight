@@ -4,6 +4,18 @@ from rest_framework import serializers as S
 from beatsight.models import TimestampedModel
 
 
+class Language(TimestampedModel):
+    name = models.CharField(max_length=255, primary_key=True)
+
+    def __str__(self):
+        return self.name
+
+class LanguageSerializer(S.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = ['name']
+
+
 class Project(TimestampedModel):
     name = models.CharField(max_length=200, unique=True)
     repo_url = models.CharField(max_length=1000)    # github/gitlab url
@@ -31,6 +43,21 @@ class Project(TimestampedModel):
     def head_commit(self):
         return self.last_commit_id
 
+class ProjectLanguage(TimestampedModel):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    lines_count = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.project.name} - {self.language.name}"
+
+class ProjectLanguageSerializer(S.ModelSerializer):
+    language_name = S.ReadOnlyField(source='language.name')
+
+    class Meta:
+        model = ProjectLanguage
+        fields = ['language_name', 'lines_count']
+    
 class SimpleSerializer(S.ModelSerializer):
     # last_commit_at = S.SerializerMethodField()
     recent_weekly_activity = S.SerializerMethodField()
@@ -53,6 +80,7 @@ class SimpleSerializer(S.ModelSerializer):
 class DetailSerializer(SimpleSerializer):
     authors_statistics = S.SerializerMethodField()
     weekly_activity = S.SerializerMethodField()
+    languages = S.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -68,4 +96,9 @@ class DetailSerializer(SimpleSerializer):
 
     def get_weekly_activity(self, obj):
         return self.weekly_activity
-    
+
+    def get_languages(self, obj):
+        ret = []
+        for e in ProjectLanguage.objects.filter(project=obj)[:5]:
+            ret.append(ProjectLanguageSerializer(e).data)
+        return ret

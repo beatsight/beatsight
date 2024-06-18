@@ -1,5 +1,6 @@
 *~
 db.sqlite3
+duckdb
 stats.duckdb
 stats.duckdb.wal
 *.pyc

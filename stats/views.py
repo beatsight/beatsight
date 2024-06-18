@@ -11,9 +11,9 @@ from django.utils.timezone import get_current_timezone
 import pandas as pd
 
 from beatsight.utils.pl_ext import PL_EXT
-from projects.models import Project, DetailSerializer, SimpleSerializer
+from projects.models import Project, DetailSerializer, SimpleSerializer, Language, ProjectLanguage
 from developers.models import (
-    Developer, Language, DeveloperLanguage, DeveloperContribution, DeveloperContributionSerializer,
+    Developer, DeveloperLanguage, DeveloperContribution, DeveloperContributionSerializer,
     DeveloperActivity
 )
 from stats.models import (
@@ -54,13 +54,35 @@ def get_a_project_stat(p: Project, force=False):
         #     gd = GeneralData(project=p)
 
         p.files_count = repo.head.files_count
-        print(repo.head.files_extensions_summary)
+        ext_df = repo.head.files_extensions_summary
+        lang_cnt = defaultdict(int)
+        for index, row in ext_df[~ext_df['is_binary']].iterrows():
+            extension = row['extension']
+            if extension not in PL_EXT:
+                continue
+            lines_count = row['lines_count']
+            lang_cnt[PL_EXT[extension]] += lines_count
+
+        for lang, cnt in lang_cnt.items():
+            try:
+                lang_obj = Language.objects.get(name=lang)
+            except Language.DoesNotExist:
+                lang_obj = Language(name=lang)
+                lang_obj.save()
+
+            try:
+                proj_lang = ProjectLanguage.objects.get(project=p, language=lang_obj)
+            except ProjectLanguage.DoesNotExist:
+                proj_lang = ProjectLanguage(project=p, language=lang_obj)
+            proj_lang.lines_count = cnt
+            proj_lang.save()
+
 
         sql = f''' SELECT
   commit_sha,
   author_timestamp
 FROM
-  {p.name}
+  '{p.name}'
 ORDER BY
   author_timestamp ASC
 LIMIT 1;
@@ -73,7 +95,7 @@ LIMIT 1;
   commit_sha,
   author_timestamp
 FROM
-  {p.name}
+  '{p.name}'
 ORDER BY
   author_timestamp DESC
 LIMIT 1;
@@ -87,11 +109,11 @@ LIMIT 1;
   COUNT(*) AS total_commits,
   COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
 FROM
-  {p.name};
+  '{p.name}';
 '''
         res = fetch_from_duckdb(sql)
         assert len(res) == 1
-        p.commits_count, p.active_days_count = res[0]
+        p.commits_count, p.active_days = res[0]
         p.save()
         p.refresh_from_db()
 
@@ -105,7 +127,7 @@ FROM
         sql = f'''SELECT
     DATE_TRUNC('week', TO_TIMESTAMP(author_timestamp)) AS week,
     COUNT(commit_sha) AS commit_count
-FROM {p.name}
+FROM '{p.name}'
 GROUP BY week
 ORDER BY week;
         '''
@@ -120,7 +142,7 @@ ORDER BY week;
         sql = f'''SELECT
     DATE_TRUNC('month', TO_TIMESTAMP(author_timestamp)) AS month,
     COUNT(commit_sha) AS commit_count
-FROM {p.name}
+FROM '{p.name}'
 GROUP BY month
 ORDER BY month;
         '''
@@ -135,7 +157,7 @@ ORDER BY month;
         sql = f'''SELECT
     DATE_TRUNC('year', TO_TIMESTAMP(author_timestamp)) AS year,
     COUNT(commit_sha) AS commit_count
-FROM {p.name}
+FROM '{p.name}'
 GROUP BY year
 ORDER BY year;
         '''
@@ -170,7 +192,7 @@ ORDER BY year;
         FIRST(author_name) AS author_name,
         CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
         CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
-        FROM {p.name}
+        FROM '{p.name}'
         GROUP BY author_email;
         '''
         for e in fetch_from_duckdb(sql):

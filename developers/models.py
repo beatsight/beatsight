@@ -9,16 +9,10 @@ from rest_framework import serializers as S
 import pytz
 
 from beatsight.models import TimestampedModel
-from projects.models import Project
+from projects.models import Project, Language, LanguageSerializer
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 
 from .utils import calculate_rank
-
-class Language(TimestampedModel):
-    name = models.CharField(max_length=255, primary_key=True)
-
-    def __str__(self):
-        return self.name
 
 
 class Developer(TimestampedModel):
@@ -146,10 +140,6 @@ class DeveloperContribution(TimestampedModel):
 
 ########## serializers
 
-class LanguageSerializer(S.ModelSerializer):
-    class Meta:
-        model = Language
-        fields = ['name']
 
 class DeveloperActivitySerializer(S.ModelSerializer):
     class Meta:
