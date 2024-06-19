@@ -16,6 +16,7 @@ services:
       - /Users/xiez/src/seahub:/seahub
       - /Users/xiez/dev/SICP-exercises:/sicp
       - /Users/xiez/dev/beatsight-web:/beatsight-web
+      - /Users/xiez/dev/coreui-free-react-admin-template:/coreui-free-react-admin-template
       - ../../../dev/17zuoye/bank:/bank
       - ../../../dev/17zuoye/ferrum:/ferrum
       - ../../../dev/17zuoye/gemserver:/gemserver

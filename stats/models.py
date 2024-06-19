@@ -54,6 +54,7 @@ class ActivityData(models.Model):
         # Get the Monday of the current week
         today = datetime.now(tz=dt.timezone.utc)
         this_monday = today - dt.timedelta(days=today.weekday())
+        this_monday = this_monday.replace(hour=0, minute=0, second=0, microsecond=0)
 
         # Calculate the start date for the past 52 weeks
         start_date = this_monday - dt.timedelta(weeks=52)
@@ -68,11 +69,14 @@ class ActivityData(models.Model):
                 week_date = datetime.strptime(item['week'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=pytz.utc)
 
             if start_date <= week_date <= this_monday:
-                data_dict[item['week']] = item['commit_count']
+                data_dict[week_date] = item['commit_count']
+
+        print(data_dict)
 
         past_52_weeks = [this_monday - dt.timedelta(weeks=x) for x in range(52)]
+
         filtered_data = [
-            {'week': week, 'commit_count': data_dict[week]} for week in past_52_weeks
+            {'week': week, 'commit_count': data_dict[week]} for week in past_52_weeks[::-1]
         ]
 
         return filtered_data

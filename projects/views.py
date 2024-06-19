@@ -21,7 +21,7 @@ def index(request):
         name = req_data['name'].strip()
         repo_branch = req_data['repo_branch'].strip()
 
-        p = Project(name=name, repo_url=repo_url, repo_path='', branch=repo_branch)
+        p = Project(name=name, repo_url=repo_url, repo_path='', repo_branch=repo_branch)
         p.save()
         p.refresh_from_db()
 

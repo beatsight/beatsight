@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from rest_framework import serializers as S
 
 from beatsight.models import TimestampedModel
@@ -15,8 +16,16 @@ class LanguageSerializer(S.ModelSerializer):
         model = Language
         fields = ['name']
 
+ACTIVE = 'active'
+INACTIVE = 'inactive'
+
 
 class Project(TimestampedModel):
+    PROJ_STATUS = (
+        (ACTIVE, '活跃'),
+        (INACTIVE, '不活跃')
+    )
+
     name = models.CharField(max_length=200, unique=True)
     repo_url = models.CharField(max_length=1000)    # github/gitlab url
     repo_path = models.CharField(max_length=1000)  # repo local path
@@ -26,7 +35,7 @@ class Project(TimestampedModel):
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
 
-    status = models.CharField(max_length=10, default='inactive')  # active or inactive
+    status = models.CharField(max_length=10, choices=PROJ_STATUS, default=INACTIVE)  # active or inactive
     active_days = models.IntegerField(default=0)  # days that have code commits
     files_count = models.IntegerField(default=0)
     commits_count = models.IntegerField(default=0)
@@ -43,6 +52,13 @@ class Project(TimestampedModel):
     def head_commit(self):
         return self.last_commit_id
 
+    def save(self, *args, **kwargs):
+        if self.last_commit_at and (timezone.now() - self.last_commit_at).days > 90:
+            self.status = INACTIVE
+        else:
+            self.status = ACTIVE
+        return super().save(*args, **kwargs)
+    
 class ProjectLanguage(TimestampedModel):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
@@ -59,20 +75,19 @@ class ProjectLanguageSerializer(S.ModelSerializer):
         fields = ['language_name', 'lines_count']
     
 class SimpleSerializer(S.ModelSerializer):
-    # last_commit_at = S.SerializerMethodField()
     recent_weekly_activity = S.SerializerMethodField()
+    status_str = S.SerializerMethodField()
 
     class Meta:
         model = Project
         exclude = []
 
     def __init__(self, *args, **kwargs):
-        # self.last_commit_at = kwargs.pop('last_commit_at', None)
         self.recent_weekly_activity = kwargs.pop('recent_weekly_activity', None)
         super().__init__(*args, **kwargs)
 
-    # def get_last_commit_at(self, obj):
-    #     return self.last_commit_at
+    def get_status_str(self, obj):
+        return obj.get_status_display()
 
     def get_recent_weekly_activity(self, obj):
         return self.recent_weekly_activity
