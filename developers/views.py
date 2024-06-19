@@ -24,6 +24,11 @@ def detail(request, email):
 
     res = DetailSerializer(d).data
 
+    commits_total = sum(e['commits_count'] for e in res['contribution'])
+
+    for e in res['contribution']:
+        e['percentage'] = round(e['commits_count'] / commits_total * 100, 1)
+
     return JsonResponse(res, safe=False)
 
 def contributions(request, email):

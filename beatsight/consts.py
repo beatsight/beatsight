@@ -1,0 +1,2 @@
+ACTIVE = 'active'
+INACTIVE = 'inactive'

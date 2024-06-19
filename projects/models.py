@@ -3,7 +3,7 @@ from django.utils import timezone
 from rest_framework import serializers as S
 
 from beatsight.models import TimestampedModel
-
+from beatsight.consts import ACTIVE, INACTIVE
 
 class Language(TimestampedModel):
     name = models.CharField(max_length=255, primary_key=True)
@@ -15,9 +15,6 @@ class LanguageSerializer(S.ModelSerializer):
     class Meta:
         model = Language
         fields = ['name']
-
-ACTIVE = 'active'
-INACTIVE = 'inactive'
 
 
 class Project(TimestampedModel):
@@ -35,15 +32,16 @@ class Project(TimestampedModel):
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
 
-    status = models.CharField(max_length=10, choices=PROJ_STATUS, default=INACTIVE)  # active or inactive
+    status = models.CharField(max_length=10, choices=PROJ_STATUS, default=INACTIVE)
     active_days = models.IntegerField(default=0)  # days that have code commits
+    age = models.IntegerField(default=0)
+    active_days_ratio = models.FloatField(default=0)
     files_count = models.IntegerField(default=0)
     commits_count = models.IntegerField(default=0)
     first_commit_id = models.CharField(max_length=50, default='')
     last_commit_id = models.CharField(max_length=50, default='')
     first_commit_at = models.DateTimeField(default=None, null=True)
     last_commit_at = models.DateTimeField(default=None, null=True)
-    age = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.name}-{self.repo_url}"
@@ -57,6 +55,8 @@ class Project(TimestampedModel):
             self.status = INACTIVE
         else:
             self.status = ACTIVE
+
+        self.active_days_ratio = round(self.active_days / self.age, 2)
         return super().save(*args, **kwargs)
     
 class ProjectLanguage(TimestampedModel):

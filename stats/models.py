@@ -71,10 +71,7 @@ class ActivityData(models.Model):
             if start_date <= week_date <= this_monday:
                 data_dict[week_date] = item['commit_count']
 
-        print(data_dict)
-
         past_52_weeks = [this_monday - dt.timedelta(weeks=x) for x in range(52)]
-
         filtered_data = [
             {'week': week, 'commit_count': data_dict[week]} for week in past_52_weeks[::-1]
         ]

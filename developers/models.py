@@ -11,15 +11,21 @@ import pytz
 from beatsight.models import TimestampedModel
 from projects.models import Project, Language, LanguageSerializer
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
+from beatsight.consts import ACTIVE, INACTIVE
 
 from .utils import calculate_rank
 
 
 class Developer(TimestampedModel):
+    DEV_STATUS = (
+        (ACTIVE, '活跃'),
+        (INACTIVE, '不活跃')
+    )
+    
     name = models.CharField(max_length=200)
     email = models.CharField(max_length=200, unique=True)
     projects = models.ManyToManyField(Project)
-    status = models.CharField(max_length=10)  # active or inactive
+    status = models.CharField(max_length=10, choices=DEV_STATUS, default=INACTIVE)
 
     first_commit_at = models.DateTimeField()
     last_commit_at = models.DateTimeField()
@@ -85,6 +91,7 @@ class Developer(TimestampedModel):
         # Get the Monday of the current week
         today = datetime.now(tz=dt.timezone.utc)
         this_monday = today - dt.timedelta(days=today.weekday())
+        this_monday = this_monday.replace(hour=0, minute=0, second=0, microsecond=0)
 
         # Calculate the start date for the past 52 weeks
         start_date = this_monday - dt.timedelta(weeks=52)
@@ -99,11 +106,11 @@ class Developer(TimestampedModel):
                 week_date = datetime.strptime(item['week'], '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
             if start_date <= week_date <= this_monday:
-                data_dict[item['week']] = item['commit_count']
+                data_dict[week_date] = item['commit_count']
 
         past_52_weeks = [this_monday - dt.timedelta(weeks=x) for x in range(52)]
         filtered_data = [
-            {'week': week, 'commit_count': data_dict[week]} for week in past_52_weeks
+            {'week': week, 'commit_count': data_dict[week]} for week in past_52_weeks[::-1]
         ]
 
         return filtered_data
@@ -147,11 +154,12 @@ class DeveloperActivitySerializer(S.ModelSerializer):
         fields = ['daily_activity', 'weekly_activity']
 
 class DeveloperLanguageSerializer(S.ModelSerializer):
-    language = LanguageSerializer(read_only=True)
+    # language = LanguageSerializer(read_only=True)
+    language_name = S.ReadOnlyField(source='language.name')
 
     class Meta:
         model = DeveloperLanguage
-        fields = ['language', 'use_count']
+        fields = ['language_name', 'use_count']
 
 class DeveloperContributionSerializer(S.ModelSerializer):
     project_name = S.ReadOnlyField(source='project.name')
@@ -165,18 +173,18 @@ class DeveloperContributionSerializer(S.ModelSerializer):
 
 
 class SimpleSerializer(S.ModelSerializer):
-    recent_weekly_activity = S.SerializerMethodField()
+    status_str = S.SerializerMethodField()
 
     class Meta:
         model = Developer
-        exclude = ['id', 'projects', 'weekly_activity']
+        exclude = ['id', 'projects',]
 
+    def get_status_str(self, obj):
+        return obj.get_status_display()
+        
     # def __init__(self, *args, **kwargs):
     #     self.recent_weekly_activity = kwargs.pop('recent_weekly_activity', None)
     #     super().__init__(*args, **kwargs)
-
-    def get_recent_weekly_activity(self, obj):
-        return obj.recent_weekly_activity
 
 
 class DetailSerializer(SimpleSerializer):
@@ -184,6 +192,7 @@ class DetailSerializer(SimpleSerializer):
     developer_languages = DeveloperLanguageSerializer(source='developerlanguage_set', many=True, read_only=True)
     developer_activity = S.SerializerMethodField()
     contribution = S.SerializerMethodField()
+    recent_weekly_activity = S.SerializerMethodField()
 
     class Meta:
         model = Developer
@@ -209,3 +218,7 @@ class DetailSerializer(SimpleSerializer):
         except DeveloperActivity.DoesNotExist:
             # should never happen
             assert False
+
+    def get_recent_weekly_activity(self, obj):
+        return obj.recent_weekly_activity
+            
