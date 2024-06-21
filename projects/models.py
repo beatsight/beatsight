@@ -56,9 +56,12 @@ class Project(TimestampedModel):
         else:
             self.status = ACTIVE
 
-        self.active_days_ratio = round(self.active_days / self.age, 2)
+        if self.age == 0:
+            self.active_days_ratio = 0
+        else:
+            self.active_days_ratio = round(self.active_days / self.age, 2)
         return super().save(*args, **kwargs)
-    
+
 class ProjectLanguage(TimestampedModel):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)

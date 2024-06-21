@@ -12,6 +12,7 @@ services:
     environment:
       - PYTHONPATH=/Users/xiez/dev/beatsight/vendor/repostat/:$PYTHONPATH
     volumes:
+      - repo-data:/beatsight-data
       - ..:/Users/xiez/dev/beatsight
       - /Users/xiez/src/seahub:/seahub
       - /Users/xiez/dev/SICP-exercises:/sicp
@@ -44,4 +45,6 @@ services:
 networks:
   beatsight-main:
     driver: bridge      
-      
+
+volumes:
+  repo-data:

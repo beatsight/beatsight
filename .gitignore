@@ -8,3 +8,6 @@ stats.duckdb.wal
 
 vendor/repostat
 web/dist
+
+data/**
+!data/.gitkeep

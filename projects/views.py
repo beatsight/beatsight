@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from stats.models import ActivityData
 from stats.utils import fetch_from_duckdb
 from beatsight.utils import CustomJSONEncoder
+from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
 from .models import Project, SimpleSerializer, DetailSerializer
@@ -21,13 +22,21 @@ def index(request):
         name = req_data['name'].strip()
         repo_branch = req_data['repo_branch'].strip()
 
+        if repo_url.startswith('http://') or repo_url.startswith('https://'):
+            return JsonResponse({'error': '项目地址仅支持 SSH 方式，不支持 HTTP'}, status=400)
+        try:
+            test_repo_and_branch(repo_url, name, repo_branch)
+        except RepoDoesNotExist:
+            return JsonResponse({'error': '项目地址不存在或无法访问，请检查'}, status=400)
+        except BranchDoesNotExist:
+            return JsonResponse({'error': '项目分支不存，请检查'}, status=400)
+
         p = Project(name=name, repo_url=repo_url, repo_path='', repo_branch=repo_branch)
         p.save()
         p.refresh_from_db()
 
         res = SimpleSerializer(p).data
         return JsonResponse(res, safe=False)
-
 
     # get
     res = []
