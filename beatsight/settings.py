@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # "corsheaders",
+    'rest_framework',
 
     'projects.apps.ProjectsConfig',
     'repo_sync.apps.RepoSyncConfig',
@@ -129,6 +130,27 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication'
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'EXCEPTION_HANDLER': 'beatsight.views.custom_exception_handler',
+    'PAGE_SIZE': 10
+}
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:4200',
+]
+
+ALLOWED_HOSTS = [
+    'localhost',
+]
+
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:4200',
+]
 
 # ###### custsom settings
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']

@@ -16,8 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework import routers
+
+from projects import views as proj_views
+
+# router = routers.DefaultRouter()
+# router.register(r'projects', views.ProjViewSet)
 
 urlpatterns = [
+    # path('', include(router.urls)),
+
     path('api/projects/', include('projects.urls')),
     path('api/developers/', include('developers.urls')),
     path('stats/', include('stats.urls')),
