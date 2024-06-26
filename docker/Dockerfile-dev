@@ -20,7 +20,7 @@ RUN mkdir vendor
 COPY vendor/repostat/requirements.txt vendor/requirements.txt
 COPY vendor/repostat/requirements-dev.txt vendor/requirements-dev.txt
 
-RUN apt-get install -y git
+RUN apt-get install -y git procps
 
 EXPOSE 22/tcp 80/tcp 8080/tcp
 

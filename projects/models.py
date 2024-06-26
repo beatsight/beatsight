@@ -3,7 +3,10 @@ from django.utils import timezone
 from rest_framework import serializers as S
 
 from beatsight.models import TimestampedModel
-from beatsight.consts import ACTIVE, INACTIVE
+from beatsight.consts import (
+    ACTIVE, INACTIVE, INIT, CONN_SUCCESS, CONN_ERROR,
+    STATING, STAT_SUCCESS, STAT_ERROR,
+)
 
 class Language(TimestampedModel):
     name = models.CharField(max_length=255, primary_key=True)
@@ -20,19 +23,29 @@ class LanguageSerializer(S.ModelSerializer):
 class Project(TimestampedModel):
     PROJ_STATUS = (
         (ACTIVE, '活跃'),
-        (INACTIVE, '不活跃')
+        (INACTIVE, '不活跃'),
+    )
+
+    SYNC_STATUS = (
+        (INIT, '初始化'),
+        (CONN_SUCCESS, '连接成功'),
+        (CONN_ERROR, '连接失败'),
+        (STATING, '数据计算中'),
+        (STAT_SUCCESS, '数据计算完成'),
+        (STAT_ERROR, '数据计算失败'),
     )
 
     name = models.CharField(max_length=200, unique=True)
     repo_url = models.CharField(max_length=1000)    # github/gitlab url
-    repo_path = models.CharField(max_length=1000)  # repo local path
     repo_branch = models.CharField(max_length=100, default='master')      # master/dev/...
+    repo_path = models.CharField(max_length=1000, default='')  # repo local path
 
     # head_commit = models.CharField(max_length=50, default=None, null=True)
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
+    sync_status = models.CharField(max_length=20, choices=SYNC_STATUS, default=INIT)
 
-    status = models.CharField(max_length=10, choices=PROJ_STATUS, default=INACTIVE)
+    status = models.CharField(max_length=20, choices=PROJ_STATUS, default=INACTIVE)
     active_days = models.IntegerField(default=0)  # days that have code commits
     age = models.IntegerField(default=0)
     active_days_ratio = models.FloatField(default=0)
@@ -80,6 +93,7 @@ class ProjectLanguageSerializer(S.ModelSerializer):
 class SimpleSerializer(S.ModelSerializer):
     recent_weekly_activity = S.SerializerMethodField()
     status_str = S.SerializerMethodField()
+    sync_status_str = S.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -91,6 +105,9 @@ class SimpleSerializer(S.ModelSerializer):
 
     def get_status_str(self, obj):
         return obj.get_status_display()
+
+    def get_sync_status_str(self, obj):
+        return obj.get_sync_status_display()
 
     def get_recent_weekly_activity(self, obj):
         return self.recent_weekly_activity

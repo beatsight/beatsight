@@ -27,18 +27,59 @@ services:
       - "8081:8081"
     networks:
       - beatsight-main
+    depends_on:
+      - redis
+      - celery
 
-  web:
-    container_name: beatsight_web_dev
-    build:
-      context: ..
-      dockerfile: docker/web-Dockerfile-dev
-    image: beatsight-web:dev
-    entrypoint: ["tail", "-f", "/dev/null"]
+  # web:
+  #   container_name: beatsight_web_dev
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/web-Dockerfile-dev
+  #   image: beatsight-web:dev
+  #   entrypoint: ["tail", "-f", "/dev/null"]
+  #   volumes:
+  #     - ../web:/web
+  #   ports:
+  #     - "4200:4200"
+  #   networks:
+  #     - beatsight-main
+
+  redis:
+    container_name: beatsight-reids
+    image: redis:alpine
     volumes:
-      - ../web:/web
-    ports:
-      - "4200:4200"
+      - redis-data:/data
+    networks:
+      - beatsight-main
+
+  celery:
+    # build: .
+    # user: django-user
+    container_name: beatsight_celery
+    image: beatsight:dev
+    environment:
+      - PYTHONPATH=/Users/xiez/dev/beatsight/vendor/repostat/:$PYTHONPATH
+    # command: ["python", "-m", "celery", "-A", "beatsight", "worker", "--loglevel=info"]
+    command: ["python", "manage.py", "celery"]
+    volumes:
+      - repo-data:/beatsight-data
+      - ..:/Users/xiez/dev/beatsight
+    depends_on:
+      - redis
+    networks:
+      - beatsight-main
+
+  celerybeat:
+    image: beatsight:dev
+    environment:
+      - PYTHONPATH=/Users/xiez/dev/beatsight/vendor/repostat/:$PYTHONPATH
+    command: ["python", "-m", "celery", "-A", "beatsight", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    volumes:
+      - repo-data:/beatsight-data
+      - ..:/Users/xiez/dev/beatsight
+    depends_on:
+      - redis
     networks:
       - beatsight-main
 
@@ -48,3 +89,4 @@ networks:
 
 volumes:
   repo-data:
+  redis-data:

@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import re
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # "corsheaders",
     'rest_framework',
+    'django_celery_beat',
 
     'projects.apps.ProjectsConfig',
     'repo_sync.apps.RepoSyncConfig',
@@ -140,17 +141,50 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:4200',
-]
+# Celery settings
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     'http://localhost:4200',
+# ]
+# ALLOWED_HOSTS = [
+#     'localhost',
+# ]
+# CORS_ORIGIN_WHITELIST = [
+#     'http://localhost:4200',
+# ]
 
-CORS_ORIGIN_WHITELIST = [
-    'http://localhost:4200',
-]
 
 # ###### custsom settings
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
+
+
+def load_local_settings(module):
+    """Import any symbols that begin with A-Z. Append to lists any symbols that begin with "EXTRA_".
+    """
+    for attr in dir(module):
+        match = re.search('^EXTRA_(\w+)', attr)
+        if match:
+            name = match.group(1)
+            value = getattr(module, attr)
+            try:
+                globals()[name] += value
+            except KeyError:
+                globals()[name] = value
+        elif re.search('^[A-Z]', attr):
+            globals()[attr] = getattr(module, attr)
+
+try:
+    from . import local_settings
+except ImportError:
+    pass
+else:
+    load_local_settings(local_settings)
+    del local_settings

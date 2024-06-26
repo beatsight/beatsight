@@ -20,6 +20,7 @@ from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDo
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
 from .models import Project, SimpleSerializer, DetailSerializer
+from .tasks import init_repo_task, stat_repo_task, switch_repo_branch_task
 
 class ListCreate(generics.ListCreateAPIView):
     """
@@ -48,19 +49,28 @@ class ListCreate(generics.ListCreateAPIView):
         repo_url = req_data['repo_url'].strip()
         name = req_data['name'].strip()
         repo_branch = req_data['repo_branch'].strip()
+        test_conn = True if req_data.get('test_conn', 0) == 1 else False
 
         if not (repo_url.startswith('ssh://') or repo_url.startswith('git@')):
             return client_error('项目地址仅支持 SSH 方式，不支持 HTTP')
-        # try:
-        #     test_repo_and_branch(repo_url, name, repo_branch)
-        # except RepoDoesNotExist:
-        #     return client_error('项目地址不存在或无法访问，请检查')
-        # except BranchDoesNotExist:
-        #     return client_error('项目分支不存，请检查')
+
+        if test_conn:
+            try:
+                test_repo_and_branch(repo_url, name, repo_branch)
+            except RepoDoesNotExist:
+                return client_error('项目地址不存在或无法访问，请检查')
+            except BranchDoesNotExist:
+                return client_error('项目分支不存在，请检查')
+            return Response({})
+
+        if Project.objects.filter(name=name).count() > 0:
+            return client_error(f'项目名称 {name} 已存在，请检查')
 
         p = Project(name=name, repo_url=repo_url, repo_path='', repo_branch=repo_branch)
         p.save()
         p.refresh_from_db()
+
+        init_repo_task.delay(p.id, repo_url, name, repo_branch)
 
         res = SimpleSerializer(p).data
         return Response(res)
@@ -104,17 +114,25 @@ class Detail(GenericViewSet):
         p = self.get_object()
 
         req_data = json.loads(request.body)
+        old_url = p.repo_url
+        old_branch = p.repo_branch
+
         p.name = req_data['name'].strip()
         p.repo_url = req_data['repo_url'].strip()
         p.repo_branch = req_data['repo_branch'].strip()
         p.save()
         p.refresh_from_db()
 
+        if p.repo_url != old_url:
+            init_repo_task.delay(p.id, p.repo_url, p.name, p.repo_branch)
+
+        if p.repo_branch != old_branch:
+            switch_repo_branch_task.delay(p.id, p.repo_branch)
+
         res = SimpleSerializer(p).data
         return Response(res)
 
     def destroy(self, request, *args, **kwargs):
-        assert False
         p = self.get_object()
         p.delete()
         return Response({})

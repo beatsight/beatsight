@@ -10,6 +10,7 @@ print(f"Current working dir: {cwd}")
 
 ssh_key = f"{cwd}/data/id_rsa"
 ssh_pubkey = f"{cwd}/data/id_rsa.pub"
+print("ssh keys:", ssh_key, ssh_pubkey)
 
 # keypair = pygit2.Keypair("git", ssh_pubkey, ssh_key, "")
 # callbacks = pygit2.RemoteCallbacks(credentials=keypair)
@@ -34,8 +35,9 @@ class CheckoutBranchError(Exception):
 class LocalRepoExists(Exception):
     ...
 
+
 def clone_via_ssh(repo_url, local_path, branch_name='', depth=100000, ):
-    os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key}"
+    os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
 
     cmd = ["git", "clone", repo_url, local_path, "--depth", str(depth)]
     if branch_name:
@@ -72,7 +74,27 @@ def full_clone_repo_with_branch(repo_url, name, branch_name):
     print(f"full_clone_repo_with_branch {repo_url}, {name}, {branch_name}")
     local_path = os.path.join(repo_data_dir, name)
     if os.path.exists(local_path):
-        raise LocalRepoExists
+        # raise LocalRepoExists
+        shutil.rmtree(local_path)
 
     clone_via_ssh(repo_url, local_path, branch_name=branch_name)
     return local_path
+
+def switch_repo_branch(repo_path, branch):
+    print(f"switch_repo_branch {repo_path} {branch}")
+
+    os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
+
+    # Change directory to the cloned repository
+    old_cwd = os.getcwd()
+    os.chdir(repo_path)
+
+    try:
+        subprocess.run(["git", "fetch", "origin", f"{branch}:{branch}"], check=True)
+        subprocess.run(["git", "checkout", branch], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error change branch to '{branch}")
+        print(e)
+        raise BranchDoesNotExist
+    finally:
+        os.chdir(old_cwd)

@@ -50,7 +50,10 @@ docker.build.web:
 	docker-compose -f docker/docker-compose.dev.yaml build web
 
 docker.up:
-	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up app
+	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up
+
+docker.up.celery:
+	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up celery
 
 docker.up.web:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up web
