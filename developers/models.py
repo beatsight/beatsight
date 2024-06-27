@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 import datetime as dt
 from datetime import datetime, date
@@ -12,6 +14,7 @@ from beatsight.models import TimestampedModel
 from projects.models import Project, Language, LanguageSerializer
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 from beatsight.consts import ACTIVE, INACTIVE
+from beatsight.utils.pl_color import PL_COLOR
 
 from .utils import calculate_rank
 
@@ -156,10 +159,20 @@ class DeveloperActivitySerializer(S.ModelSerializer):
 class DeveloperLanguageSerializer(S.ModelSerializer):
     # language = LanguageSerializer(read_only=True)
     language_name = S.ReadOnlyField(source='language.name')
+    language_color = S.SerializerMethodField()
 
     class Meta:
         model = DeveloperLanguage
-        fields = ['language_name', 'use_count']
+        fields = ['language_name', 'language_color', 'use_count']
+
+    def get_language_color(self, obj):
+        d = PL_COLOR.get(obj.language.name)
+        if not d:
+            red = random.randint(0, 255)
+            green = random.randint(0, 255)
+            blue = random.randint(0, 255)
+            return red, green, blue
+        return d['rgb']
 
 class DeveloperContributionSerializer(S.ModelSerializer):
     project_name = S.ReadOnlyField(source='project.name')

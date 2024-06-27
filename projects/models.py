@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 from django.utils import timezone
 from rest_framework import serializers as S
@@ -7,6 +9,7 @@ from beatsight.consts import (
     ACTIVE, INACTIVE, INIT, CONN_SUCCESS, CONN_ERROR,
     STATING, STAT_SUCCESS, STAT_ERROR,
 )
+from beatsight.utils.pl_color import PL_COLOR
 
 class Language(TimestampedModel):
     name = models.CharField(max_length=255, primary_key=True)
@@ -85,11 +88,21 @@ class ProjectLanguage(TimestampedModel):
 
 class ProjectLanguageSerializer(S.ModelSerializer):
     language_name = S.ReadOnlyField(source='language.name')
+    language_color = S.SerializerMethodField()
 
     class Meta:
         model = ProjectLanguage
-        fields = ['language_name', 'lines_count']
-    
+        fields = ['language_name', 'language_color', 'lines_count']
+
+    def get_language_color(self, obj):
+        d = PL_COLOR.get(obj.language.name)
+        if not d:
+            red = random.randint(0, 255)
+            green = random.randint(0, 255)
+            blue = random.randint(0, 255)
+            return red, green, blue
+        return d['rgb']
+
 class SimpleSerializer(S.ModelSerializer):
     recent_weekly_activity = S.SerializerMethodField()
     status_str = S.SerializerMethodField()
