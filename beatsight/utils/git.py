@@ -1,16 +1,20 @@
+import logging
 import subprocess
 import os
 import shutil
 
+from django.conf import settings
 # import pygit2
 # from pygit2 import clone_repository
 
+logger = logging.getLogger(settings.LOGNAME)
+
 cwd = os.getcwd()
-print(f"Current working dir: {cwd}")
+logger.info(f"Current working dir: {cwd}")
 
 ssh_key = f"{cwd}/data/id_rsa"
 ssh_pubkey = f"{cwd}/data/id_rsa.pub"
-print("ssh keys:", ssh_key, ssh_pubkey)
+logger.info(f"ssh keys: {ssh_key}, {ssh_pubkey}", )
 
 # keypair = pygit2.Keypair("git", ssh_pubkey, ssh_key, "")
 # callbacks = pygit2.RemoteCallbacks(credentials=keypair)

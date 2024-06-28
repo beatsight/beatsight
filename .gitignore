@@ -12,4 +12,7 @@ web/dist
 data/**
 !data/.gitkeep
 
+logs/**
+!logs/.gitkeep
+
 beatsight/local_settings.py

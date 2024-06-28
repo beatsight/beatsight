@@ -1,5 +1,7 @@
 import time
+import logging
 
+from django.conf import settings
 from django.utils import timezone
 from celery import shared_task
 
@@ -8,6 +10,8 @@ from beatsight.consts import CONN_SUCCESS, CONN_ERROR, STATING, STAT_SUCCESS, ST
 from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch
 from beatsight import celery_app
 from stats.views import get_a_project_stat
+
+logger = logging.getLogger(settings.LOGNAME)
 
 @celery_app.task
 def test_task(a, b):
@@ -42,9 +46,14 @@ def switch_repo_branch_task(proj_id, repo_branch):
     except Project.DoesNotExist:
         return
 
-    print(f'switch repo branch to {repo_branch} - {proj.repo_path}')
-    switch_repo_branch(proj.repo_path, repo_branch)
-    stat_repo_task.delay(proj_id)
+    logger.info(f'switch repo branch to {repo_branch} - {proj.repo_path}')
+
+    try:
+        switch_repo_branch(proj.repo_path, repo_branch)
+        stat_repo_task.delay(proj_id)
+    except Exception as e:
+        print(e)
+        logger.error(e)
 
 @shared_task()
 def stat_repo_task(proj_id):

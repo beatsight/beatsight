@@ -29,7 +29,7 @@ services:
       - beatsight-main
     depends_on:
       - redis
-      - celery
+      # - celery
 
   # web:
   #   container_name: beatsight_web_dev

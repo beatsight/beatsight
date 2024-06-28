@@ -9,12 +9,12 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
 import re
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -164,6 +164,133 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # ###### custsom settings
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
+
+LOGNAME = 'beatsight'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s %(pathname)s:%(lineno)d: %(levelname)-5s: %(funcName)s()- %(message)s'
+        },
+        'simple': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s:%(lineno)s %(funcName)s %(message)s'
+        },
+        # 'json': {
+        #     '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+        #     'fmt': '%(asctime) %(created) %(filename) %(funcName) %(levelname) %(levelno) %(lineno) %(module) %(msecs) %(message) %(name) %(pathname) %(process) %(processName) %(relativeCreated) %(thread) %(threadName)'  # pylint: disable=line-too-long
+        # }
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue'
+        },
+    },
+    'handlers': {
+        # 'rabbit': {
+        #     'level': 'DEBUG',
+        #     'class': 'python_logging_rabbitmq.RabbitMQHandler',
+        #     'host': RABBIT_ADDR,
+        #     'username': RABBIT_USER_NAME,
+        #     'password': RABBIT_PWD,
+        #     'exchange': 'sys-log',
+        #     'declare_exchange': True,
+        #     'formatter': 'json',
+        #     'connection_params': {
+        #         'virtual_host': 'sys-log',
+        #         'connection_attempts': None,
+        #         'socket_timeout': 5000
+        #     },
+        #     'fields': {
+        #         'appname': ELK_APP_NAME,
+        #         'hostip': HOST_IP
+        #     }
+        # },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        },
+        'beatsight_log_hdlr': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'beatsight.log'),
+            'maxBytes': 1024 * 1024 * 500,  # 500 MB
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'beatsight_err_hdlr': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'beatsight_err.log'),
+            'maxBytes': 1024 * 1024 * 500,  # 500 MB
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'request_handler': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'request.log'),
+            'maxBytes': 1024 * 1024 * 500,  # 500 MB
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'request_err_handler': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'request_err.log'),
+            'maxBytes': 1024 * 1024 * 500,  # 500 MB
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
+        'scprits_handler': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'script.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'beatsight': {
+            'handlers': [
+                # 'rabbit',
+                'console', 'beatsight_log_hdlr', 'beatsight_err_hdlr'
+            ],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'django.request': {
+            'handlers': [
+                # 'rabbit',
+                'request_handler', 'request_err_handler', 'mail_admins'
+            ],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'scripts': {
+            'handlers': ['scprits_handler'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+    }
+}
 
 
 def load_local_settings(module):
