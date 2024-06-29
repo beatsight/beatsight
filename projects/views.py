@@ -1,5 +1,7 @@
 import json
+import logging
 
+from django.conf import settings
 from django.http import Http404
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
@@ -21,6 +23,8 @@ from developers.models import DeveloperContribution, DeveloperContributionSerial
 
 from .models import Project, SimpleSerializer, DetailSerializer
 from .tasks import init_repo_task, stat_repo_task, switch_repo_branch_task
+
+logger = logging.getLogger(settings.LOGNAME)
 
 def clean_project_fields(req_data, test_conn=False):
     req_data['repo_url'] = req_data['repo_url'].strip()

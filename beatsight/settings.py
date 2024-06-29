@@ -177,10 +177,6 @@ LOGGING = {
         'simple': {
             'format': '%(asctime)s [%(levelname)s] %(name)s:%(lineno)s %(funcName)s %(message)s'
         },
-        # 'json': {
-        #     '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-        #     'fmt': '%(asctime) %(created) %(filename) %(funcName) %(levelname) %(levelno) %(lineno) %(module) %(msecs) %(message) %(name) %(pathname) %(process) %(processName) %(relativeCreated) %(thread) %(threadName)'  # pylint: disable=line-too-long
-        # }
     },
     'filters': {
         'require_debug_false': {
@@ -205,35 +201,11 @@ LOGGING = {
             'backupCount': 10,
             'formatter': 'standard',
         },
-        'beatsight_err_hdlr': {
-            'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'beatsight_err.log'),
-            'maxBytes': 1024 * 1024 * 500,  # 500 MB
-            'backupCount': 10,
-            'formatter': 'standard',
-        },
         'console': {
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
-        },
-        'request_handler': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'request.log'),
-            'maxBytes': 1024 * 1024 * 500,  # 500 MB
-            'backupCount': 10,
-            'formatter': 'standard',
-        },
-        'request_err_handler': {
-            'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'request_err.log'),
-            'maxBytes': 1024 * 1024 * 500,  # 500 MB
-            'backupCount': 10,
-            'formatter': 'standard',
         },
         'scprits_handler': {
             'level': 'DEBUG',
@@ -252,14 +224,14 @@ LOGGING = {
         },
         'beatsight': {
             'handlers': [
-                'console', 'beatsight_log_hdlr', 'beatsight_err_hdlr'
+                'console', 'beatsight_log_hdlr',
             ],
             'level': 'DEBUG',
             'propagate': True
         },
         'django.request': {
             'handlers': [
-                'request_handler', 'request_err_handler', 'mail_admins'
+                'mail_admins', 'beatsight_log_hdlr',
             ],
             'level': 'DEBUG',
             'propagate': True

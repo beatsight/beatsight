@@ -12,7 +12,7 @@ logger = logging.getLogger(settings.LOGNAME)
 cwd = os.getcwd()
 ssh_key = f"{cwd}/data/id_rsa"
 ssh_pubkey = f"{cwd}/data/id_rsa.pub"
-logger.info(f"ssh keys: {ssh_key}, {ssh_pubkey}", )
+# logger.info(f"ssh keys: {ssh_key}, {ssh_pubkey}", )
 
 # keypair = pygit2.Keypair("git", ssh_pubkey, ssh_key, "")
 # callbacks = pygit2.RemoteCallbacks(credentials=keypair)
@@ -44,14 +44,14 @@ def clone_via_ssh(repo_url, local_path, branch_name='', depth=-1):
     cmd = ["git", "clone", repo_url, local_path]
     if depth > 0:
         cmd += ["--depth", str(depth)]
-
     if branch_name:
         cmd += ["-b", branch_name]
+
     try:
-        print(f'run command: {cmd}')
+        logger.info(f'clone_via_ssh: {cmd}')
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error cloning repository: {e}")
+        logger.exception(f"Error cloning repository: {e}")
         raise RepoDoesNotExist
 
 def test_repo_and_branch(repo_url, name, branch_name):
