@@ -58,6 +58,9 @@ docker.up.app:
 docker.up.celery:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up celery
 
+docker.up.beat:
+	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up beat
+
 docker.up.web:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up web
 

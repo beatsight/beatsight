@@ -10,8 +10,6 @@ from django.conf import settings
 logger = logging.getLogger(settings.LOGNAME)
 
 cwd = os.getcwd()
-logger.info(f"Current working dir: {cwd}")
-
 ssh_key = f"{cwd}/data/id_rsa"
 ssh_pubkey = f"{cwd}/data/id_rsa.pub"
 logger.info(f"ssh keys: {ssh_key}, {ssh_pubkey}", )
@@ -40,13 +38,17 @@ class LocalRepoExists(Exception):
     ...
 
 
-def clone_via_ssh(repo_url, local_path, branch_name='', depth=100000, ):
+def clone_via_ssh(repo_url, local_path, branch_name='', depth=-1):
     os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
 
-    cmd = ["git", "clone", repo_url, local_path, "--depth", str(depth)]
+    cmd = ["git", "clone", repo_url, local_path]
+    if depth > 0:
+        cmd += ["--depth", str(depth)]
+
     if branch_name:
         cmd += ["-b", branch_name]
     try:
+        print(f'run command: {cmd}')
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error cloning repository: {e}")
@@ -102,3 +104,36 @@ def switch_repo_branch(repo_path, branch):
         raise BranchDoesNotExist
     finally:
         os.chdir(old_cwd)
+
+def pull_repo_updates(repo_path, branch):
+    os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
+
+    # Change directory to the cloned repository
+    old_cwd = os.getcwd()
+    os.chdir(repo_path)
+
+    has_updates = False
+    try:
+        # Execute the 'git pull' command
+        result = subprocess.run(['git', 'pull', 'origin', branch],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        print(result)
+        # Check the exit code to see if there were any errors
+        if result.returncode == 0:
+            # Parse the output to detect file updates
+            output = result.stdout.strip()
+            if output:
+                for line in output.split('\n'):
+                    if line.startswith(' ') or line.startswith('Updating'):
+                        print(f"- {line.strip()}")
+                        has_updates = True
+                        break
+        else:
+            print("Error checking for updates:", result.stderr.strip())
+    except subprocess.CalledProcessError as e:
+        print("Error executing git pull:", e)
+        raise e
+    finally:
+        os.chdir(old_cwd)
+
+    return has_updates

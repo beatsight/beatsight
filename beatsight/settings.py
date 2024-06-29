@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_celery_beat',
 
+    'core.apps.CoreConfig',
     'projects.apps.ProjectsConfig',
     'repo_sync.apps.RepoSyncConfig',
     'stats.apps.StatsConfig',
@@ -190,25 +191,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        # 'rabbit': {
-        #     'level': 'DEBUG',
-        #     'class': 'python_logging_rabbitmq.RabbitMQHandler',
-        #     'host': RABBIT_ADDR,
-        #     'username': RABBIT_USER_NAME,
-        #     'password': RABBIT_PWD,
-        #     'exchange': 'sys-log',
-        #     'declare_exchange': True,
-        #     'formatter': 'json',
-        #     'connection_params': {
-        #         'virtual_host': 'sys-log',
-        #         'connection_attempts': None,
-        #         'socket_timeout': 5000
-        #     },
-        #     'fields': {
-        #         'appname': ELK_APP_NAME,
-        #         'hostip': HOST_IP
-        #     }
-        # },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -270,7 +252,6 @@ LOGGING = {
         },
         'beatsight': {
             'handlers': [
-                # 'rabbit',
                 'console', 'beatsight_log_hdlr', 'beatsight_err_hdlr'
             ],
             'level': 'DEBUG',
@@ -278,7 +259,6 @@ LOGGING = {
         },
         'django.request': {
             'handlers': [
-                # 'rabbit',
                 'request_handler', 'request_err_handler', 'mail_admins'
             ],
             'level': 'DEBUG',

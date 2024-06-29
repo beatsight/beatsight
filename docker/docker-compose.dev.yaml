@@ -70,7 +70,7 @@ services:
     networks:
       - beatsight-main
 
-  celerybeat:
+  beat:
     image: beatsight:dev
     environment:
       - PYTHONPATH=/Users/xiez/dev/beatsight/vendor/repostat/:$PYTHONPATH

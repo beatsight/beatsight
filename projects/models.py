@@ -33,9 +33,9 @@ class Project(TimestampedModel):
         (INIT, '初始化'),
         (CONN_SUCCESS, '连接成功'),
         (CONN_ERROR, '连接失败'),
-        (STATING, '数据计算中'),
-        (STAT_SUCCESS, '数据计算完成'),
-        (STAT_ERROR, '数据计算失败'),
+        (STATING, '统计中'),
+        (STAT_SUCCESS, '统计完成'),
+        (STAT_ERROR, '统计失败'),
     )
 
     name = models.CharField(max_length=200, unique=True)
@@ -43,7 +43,6 @@ class Project(TimestampedModel):
     repo_branch = models.CharField(max_length=100, default='master')      # master/dev/...
     repo_path = models.CharField(max_length=1000, default='')  # repo local path
 
-    # head_commit = models.CharField(max_length=50, default=None, null=True)
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
     sync_status = models.CharField(max_length=20, choices=SYNC_STATUS, default=INIT)
