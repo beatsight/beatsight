@@ -117,7 +117,8 @@ def pull_repo_updates(repo_path, branch):
         # Execute the 'git pull' command
         result = subprocess.run(['git', 'pull', 'origin', branch],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        print(result)
+        logger.debug(result)
+
         # Check the exit code to see if there were any errors
         if result.returncode == 0:
             # Parse the output to detect file updates
@@ -125,13 +126,13 @@ def pull_repo_updates(repo_path, branch):
             if output:
                 for line in output.split('\n'):
                     if line.startswith(' ') or line.startswith('Updating'):
-                        print(f"- {line.strip()}")
+                        # print(f"- {line.strip()}")
                         has_updates = True
                         break
         else:
-            print("Error checking for updates:", result.stderr.strip())
+            logger.error("Error checking for updates:", result.stderr.strip())
     except subprocess.CalledProcessError as e:
-        print("Error executing git pull:", e)
+        logger.exception(f"Error executing git pull: {e}")
         raise e
     finally:
         os.chdir(old_cwd)

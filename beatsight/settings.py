@@ -201,6 +201,14 @@ LOGGING = {
             'backupCount': 10,
             'formatter': 'standard',
         },
+        'beatsight_task_log_hdlr': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(str(BASE_DIR) + '/logs/', 'task.log'),
+            'maxBytes': 1024 * 1024 * 500,  # 500 MB
+            'backupCount': 10,
+            'formatter': 'standard',
+        },
         'console': {
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
@@ -232,6 +240,13 @@ LOGGING = {
         'django.request': {
             'handlers': [
                 'mail_admins', 'beatsight_log_hdlr',
+            ],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'tasks': {
+            'handlers': [
+                'console', 'beatsight_task_log_hdlr',
             ],
             'level': 'DEBUG',
             'propagate': True

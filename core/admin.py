@@ -1,3 +1,10 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import TaskLock
+
+
+class TaskLockAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(TaskLock, TaskLockAdmin)
