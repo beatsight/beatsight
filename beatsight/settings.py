@@ -127,6 +127,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = '/home/ubuntu/beatsight/static'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -155,27 +157,19 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # CSRF_TRUSTED_ORIGINS = [
 #     'http://localhost:4200',
 # ]
-# ALLOWED_HOSTS = [
-#     'localhost',
-# ]
 # CORS_ORIGIN_WHITELIST = [
 #     'http://localhost:4200',
 # ]
-
+# CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 
 # ###### custsom settings
-# CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
+ALLOWED_HOSTS = [
+    '*',
+]
 
 BEATSIGHT_DATA_DIR = '/beatsight-data'
 TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
-if not os.path.exists(TMP_REPO_DATA_DIR):
-    os.makedirs(TMP_REPO_DATA_DIR)
-print(f'TMP_REPO_DATA_DIR: {TMP_REPO_DATA_DIR}')
-
 REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'repos')
-if not os.path.exists(REPO_DATA_DIR):
-    os.makedirs(REPO_DATA_DIR)
-print(f'REPO_DATA_DIR: {REPO_DATA_DIR}')
 
 LOGNAME = 'beatsight'
 LOGGING = {
@@ -293,3 +287,12 @@ except ImportError:
 else:
     load_local_settings(local_settings)
     del local_settings
+
+# --------------------
+if not os.path.exists(TMP_REPO_DATA_DIR):
+    os.makedirs(TMP_REPO_DATA_DIR)
+print(f'TMP_REPO_DATA_DIR: {TMP_REPO_DATA_DIR}')
+
+if not os.path.exists(REPO_DATA_DIR):
+    os.makedirs(REPO_DATA_DIR)
+print(f'REPO_DATA_DIR: {REPO_DATA_DIR}')

@@ -1,16 +1,36 @@
+[inet_http_server]
+port=localhost:9001
+username=foo
+password=foo
+
 [supervisord]
-nodaemon=true
-logfile=/Users/xiez/dev/beatsight/logs/supervisord.log
-pidfile=/Users/xiez/dev/beatsight/logs/supervisord.pid
+nodaemon=false
+logfile=/home/ubuntu/beatsight/logs/supervisord.log
+pidfile=/home/ubuntu/beatsight/logs/supervisord.pid
 
 [program:beatsight]
-command=/usr/local/bin/gunicorn -c /Users/xiez/dev/beatsight/conf/gunicorn.conf.py
-directory=/Users/xiez/dev/beatsight
-user=root
-stdout_logfile=/Users/xiez/dev/beatsight/logs/gunicorn-access.log
-stderr_logfile=/Users/xiez/dev/beatsight/logs/gunicorn-error.log
+command=/home/ubuntu/.local/bin/gunicorn -c /home/ubuntu/beatsight/conf/gunicorn.conf.py
+directory=/home/ubuntu/beatsight
+user=ubuntu
+stdout_logfile=/home/ubuntu/beatsight/logs/gunicorn-access.log
+stderr_logfile=/home/ubuntu/beatsight/logs/gunicorn-error.log
 redirect_stderr=true
-environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/Users/xiez/dev/beatsight/vendor"
+environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/home/ubuntu/beatsight/vendor/repostat"
+
+[program:celery]
+command=/home/ubuntu/.local/bin/celery -A beatsight worker --loglevel=info
+directory=/home/ubuntu/beatsight
+user=ubuntu
+stdout_logfile=/home/ubuntu/beatsight/logs/celery.log
+redirect_stderr=true
+environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/home/ubuntu/beatsight/vendor/repostat"
+
+[program:beat]
+command=/home/ubuntu/.local/bin/celery -A beatsight beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+directory=/home/ubuntu/beatsight
+user=ubuntu
+stdout_logfile=/home/ubuntu/beatsight/logs/beat.log
+redirect_stderr=true
+environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/home/ubuntu/beatsight/vendor/repostat"
 
 [supervisorctl]
-
