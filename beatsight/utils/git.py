@@ -17,13 +17,6 @@ ssh_pubkey = f"{cwd}/data/id_rsa.pub"
 # keypair = pygit2.Keypair("git", ssh_pubkey, ssh_key, "")
 # callbacks = pygit2.RemoteCallbacks(credentials=keypair)
 
-tmp_repo_data_dir = '/beatsight-data/temp-repos'
-if not os.path.exists(tmp_repo_data_dir):
-    os.makedirs(tmp_repo_data_dir)
-
-repo_data_dir = '/beatsight-data/repos'
-if not os.path.exists(repo_data_dir):
-    os.makedirs(repo_data_dir)
 
 class RepoDoesNotExist(Exception):
     ...
@@ -49,14 +42,15 @@ def clone_via_ssh(repo_url, local_path, branch_name='', depth=-1):
 
     try:
         logger.info(f'clone_via_ssh: {cmd}')
-        subprocess.run(cmd, check=True)
+        res = subprocess.run(cmd, check=True)
+        logger.debug(res)
     except subprocess.CalledProcessError as e:
         logger.exception(f"Error cloning repository: {e}")
         raise RepoDoesNotExist
 
 def test_repo_and_branch(repo_url, name, branch_name):
     print(f"test_repo_and_branch {repo_url}, {name}, {branch_name}")
-    local_path = os.path.join(tmp_repo_data_dir, name)
+    local_path = os.path.join(settings.TMP_REPO_DATA_DIR, name)
 
     if os.path.exists(local_path):
         shutil.rmtree(local_path)
@@ -77,8 +71,8 @@ def test_repo_and_branch(repo_url, name, branch_name):
         os.chdir(old_cwd)
 
 def full_clone_repo_with_branch(repo_url, name, branch_name):
-    print(f"full_clone_repo_with_branch {repo_url}, {name}, {branch_name}")
-    local_path = os.path.join(repo_data_dir, name)
+    logger.info(f"full_clone_repo_with_branch {repo_url}, {name}, {branch_name}")
+    local_path = os.path.join(settings.REPO_DATA_DIR, name)
     if os.path.exists(local_path):
         # raise LocalRepoExists
         shutil.rmtree(local_path)

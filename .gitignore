@@ -16,3 +16,7 @@ logs/**
 !logs/.gitkeep
 
 beatsight/local_settings.py
+
+conf/gunicorn.conf.py
+conf/nginx.conf
+conf/supervisord.conf

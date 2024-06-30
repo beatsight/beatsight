@@ -166,6 +166,17 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # ###### custsom settings
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 
+BEATSIGHT_DATA_DIR = '/beatsight-data'
+TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
+if not os.path.exists(TMP_REPO_DATA_DIR):
+    os.makedirs(TMP_REPO_DATA_DIR)
+print(f'TMP_REPO_DATA_DIR: {TMP_REPO_DATA_DIR}')
+
+REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'repos')
+if not os.path.exists(REPO_DATA_DIR):
+    os.makedirs(REPO_DATA_DIR)
+print(f'REPO_DATA_DIR: {REPO_DATA_DIR}')
+
 LOGNAME = 'beatsight'
 LOGGING = {
     'version': 1,

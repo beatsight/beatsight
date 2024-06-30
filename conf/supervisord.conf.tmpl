@@ -1,0 +1,16 @@
+[supervisord]
+nodaemon=true
+logfile=/Users/xiez/dev/beatsight/logs/supervisord.log
+pidfile=/Users/xiez/dev/beatsight/logs/supervisord.pid
+
+[program:beatsight]
+command=/usr/local/bin/gunicorn -c /Users/xiez/dev/beatsight/conf/gunicorn.conf.py
+directory=/Users/xiez/dev/beatsight
+user=root
+stdout_logfile=/Users/xiez/dev/beatsight/logs/gunicorn-access.log
+stderr_logfile=/Users/xiez/dev/beatsight/logs/gunicorn-error.log
+redirect_stderr=true
+environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/Users/xiez/dev/beatsight/vendor"
+
+[supervisorctl]
+

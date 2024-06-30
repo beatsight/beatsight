@@ -106,11 +106,16 @@ def update_repo_task():
 
     for p in Project.objects.filter(sync_status=STAT_SUCCESS):
         try:
-            if pull_repo_updates(p.repo_path, p.repo_branch) is True:
-                logger.info(f'{p.id} - {p.name} has new updates, start stat task')
-                stat_repo_task.delay(p.id)
+            res = pull_repo_updates(p.repo_path, p.repo_branch)
         except Exception as e:
             logger.exception(e)
             continue
 
+        if res is True:
+            logger.info(f'{p.id} - {p.name} has new updates, start stat task')
+            p.last_sync_at = timezone.now()
+            p.save()
+            stat_repo_task.delay(p.id)
+
+    logger.debug('end update_repo_task')
     unlock_task(lock)
