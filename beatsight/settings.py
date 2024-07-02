@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'repo_sync.apps.RepoSyncConfig',
     'stats.apps.StatsConfig',
     'developers.apps.DevelopersConfig',
+    'profiles.apps.ProfilesConfig',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +65,9 @@ ROOT_URLCONF = 'beatsight.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,6 +132,7 @@ STATIC_URL = 'static/'
 
 STATIC_ROOT = '/home/ubuntu/beatsight/static'
 
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -136,8 +140,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication'
+        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'EXCEPTION_HANDLER': 'beatsight.views.custom_exception_handler',
@@ -154,15 +158,17 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-# CSRF_TRUSTED_ORIGINS = [
-#     'http://localhost:4200',
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:4200',
+]
 # CORS_ORIGIN_WHITELIST = [
 #     'http://localhost:4200',
 # ]
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 
 # ###### custsom settings
+LOGIN_REDIRECT_URL = '/'
+
 ALLOWED_HOSTS = [
     '*',
 ]

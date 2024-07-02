@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 
 from stats.models import ActivityData
 from stats.utils import fetch_from_duckdb
@@ -53,7 +54,7 @@ class ListCreate(generics.ListCreateAPIView):
     """
     queryset = Project.objects.all()
     serializer_class = SimpleSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def list(self, request):
         res = []
@@ -98,7 +99,7 @@ class ListCreate(generics.ListCreateAPIView):
 class Detail(GenericViewSet):
     queryset = Project.objects.all()
     serializer_class = DetailSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         try:

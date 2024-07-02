@@ -23,11 +23,21 @@ from projects import views as proj_views
 # router = routers.DefaultRouter()
 # router.register(r'projects', views.ProjViewSet)
 
+from . import views
+
 urlpatterns = [
     # path('', include(router.urls)),
 
+
     path('api/projects/', include('projects.urls')),
     path('api/developers/', include('developers.urls')),
-    path('stats/', include('stats.urls')),
+    path('api/profiles/', include('profiles.urls')),
     path('_admin/', admin.site.urls),
+
+    path('accounts/password-reset/', views.UserPasswordResetView.as_view(), name='password_reset'),
+    path('accounts/login/', views.UserLoginView.as_view(), name='login'),
+    path('accounts/logout/', views.logout_view, name='logout'),
+    # path("accounts/", include("django.contrib.auth.urls")),
+
+    path('stats/', include('stats.urls')),
 ]
