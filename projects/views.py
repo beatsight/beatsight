@@ -16,7 +16,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
 from stats.models import ActivityData
-from stats.utils import fetch_from_duckdb
 from beatsight.utils import CustomJSONEncoder
 from beatsight.utils.response import ok, client_error, server_error
 from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist

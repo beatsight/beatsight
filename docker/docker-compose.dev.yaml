@@ -7,8 +7,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile-dev
     image: beatsight:dev
-    # entrypoint: ["tail", "-f", "/dev/null"]
-    entrypoint: ["make", "run"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    # entrypoint: ["make", "run"]
     environment:
       - PYTHONPATH=/Users/xiez/dev/beatsight/vendor/repostat/:$PYTHONPATH
     volumes:

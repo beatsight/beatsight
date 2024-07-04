@@ -93,6 +93,7 @@ DATABASES = {
     }
 }
 
+STAT_DB_DIR = os.path.join(BASE_DIR, 'data/stats')
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -302,3 +303,6 @@ print(f'TMP_REPO_DATA_DIR: {TMP_REPO_DATA_DIR}')
 if not os.path.exists(REPO_DATA_DIR):
     os.makedirs(REPO_DATA_DIR)
 print(f'REPO_DATA_DIR: {REPO_DATA_DIR}')
+
+if not os.path.exists(STAT_DB_DIR):
+    os.makedirs(STAT_DB_DIR)

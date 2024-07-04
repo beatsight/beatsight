@@ -4,7 +4,6 @@ import pandas as pd
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 
-from stats.utils import fetch_from_duckdb
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
