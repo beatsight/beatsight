@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
@@ -25,8 +27,12 @@ from projects import views as proj_views
 
 from . import views
 
+@login_required(login_url='/accounts/login/')
+def home(request):
+    return redirect('/projects')
+
 urlpatterns = [
-    # path('', include(router.urls)),
+    path('', home),
 
 
     path('api/projects/', include('projects.urls')),
