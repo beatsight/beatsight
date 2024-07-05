@@ -166,7 +166,9 @@ class DeveloperLanguageSerializer(S.ModelSerializer):
         fields = ['language_name', 'language_color', 'use_count']
 
     def get_language_color(self, obj):
+        print(obj.language.name)
         d = PL_COLOR.get(obj.language.name)
+        print(d)
         if not d:
             red = random.randint(0, 255)
             green = random.randint(0, 255)

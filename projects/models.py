@@ -12,7 +12,7 @@ from beatsight.consts import (
 from beatsight.utils.pl_color import PL_COLOR
 
 class Language(TimestampedModel):
-    name = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name

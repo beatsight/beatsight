@@ -70,7 +70,7 @@ class ListCreate(generics.ListCreateAPIView):
         return ok(res)
 
     def create(self, request):
-        req_data = json.loads(request.body)
+        req_data = request.data
         test_conn = True if req_data.get('test_conn', 0) == 1 else False
 
         ok, ret = clean_project_fields(req_data, test_conn)

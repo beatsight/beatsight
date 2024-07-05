@@ -256,6 +256,7 @@ ORDER BY year;
         daily_stats['project'] = p.name
 
         daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
+        create_author_daily_commits_table(db=daily_commits_db)
         if last_sync_commit == '':
             delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'",
                                           db=daily_commits_db)
@@ -319,6 +320,25 @@ ORDER BY year;
         # 'files': fd_s.data if fd_s else {},
     }
 
+def create_author_daily_commits_table(db):
+    with duckdb.connect(db) as con:
+        table_exists = con.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'author_daily_commits'"
+        ).fetchone()[0] > 0
+        if not table_exists:
+            con.execute(
+                """
+                CREATE TABLE author_daily_commits (
+                author_email VARCHAR,
+                author_date DATE,
+                insertions INT32,
+                deletions INT32,
+                daily_commit_count INT32,
+                file_exts VARCHAR[],
+                project VARCHAR
+                );
+                """
+            )
 
 def gen_whole_history_df(p, db):
     repo = pygit2.Repository(p.repo_path)
@@ -407,7 +427,6 @@ WHERE
         dev.total_deletions = e[4]
         dev.active_days = e[5]
         dev.save()
-
     dev.calculate_rank()
 
 def get_most_used_langs(email, db):
@@ -416,23 +435,14 @@ def get_most_used_langs(email, db):
     """
     file_exts_df = fetch_from_duckdb(sql, to_df=True, db=db)
 
-    tmp = pd.DataFrame([x for row in file_exts_df['file_exts'] for x in row.split(';')], columns=['file_ext'])
+    tmp = pd.DataFrame([x for row in file_exts_df['file_exts'] for x in row], columns=['file_ext'])
     top_file_exts = tmp.groupby('file_ext').size().sort_values(ascending=False).head(10)
     lang_cnt = defaultdict(int)
     for fe, count in top_file_exts.items():
         if fe not in PL_EXT:
             continue
         lang_cnt[PL_EXT[fe]] += count
-
-    # # Calculate the total count
-    # total_count = sum(lang_cnt.values())
-
     return lang_cnt.items()
-
-    # for key, value in
-    #     percentage = (value / total_count) * 100
-    #     top_langs[key] = f"{percentage:.2f}%"
-    # return top_langs
 
 def get_author_weekly_commit_count(email, db):
     sql = f'''
