@@ -1,13 +1,3 @@
-[inet_http_server]
-port=localhost:9001
-username=foo
-password=foo
-
-[supervisord]
-nodaemon=false
-logfile=/home/ubuntu/beatsight/logs/supervisord.log
-pidfile=/home/ubuntu/beatsight/logs/supervisord.pid
-
 [program:beatsight]
 command=/home/ubuntu/.local/bin/gunicorn -c /home/ubuntu/beatsight/conf/gunicorn.conf.py
 directory=/home/ubuntu/beatsight
@@ -32,5 +22,3 @@ user=ubuntu
 stdout_logfile=/home/ubuntu/beatsight/logs/beat.log
 redirect_stderr=true
 environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/home/ubuntu/beatsight/vendor/repostat"
-
-[supervisorctl]

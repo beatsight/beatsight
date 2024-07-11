@@ -12,7 +12,7 @@ from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperCont
 def index(request):
     """list all developers"""
     res = []
-    for e in Developer.objects.all():
+    for e in Developer.objects.all().order_by('rank_percentile')[:100]:
         res.append(SimpleSerializer(e).data)
 
     return JsonResponse(res, safe=False)

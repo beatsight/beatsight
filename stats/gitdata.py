@@ -37,7 +37,11 @@ def gen_commit_record(repo, commit):
 
     is_merge_commit = False
     insertions, deletions = 0, 0
-    details = []
+    details = {
+        'A': [],
+        'D': [],
+        'M': []
+    }
     file_exts = set()
     if len(commit.parents) == 0:  # initial commit
         diff = commit.tree.diff_to_tree(swap=True)
@@ -45,10 +49,8 @@ def gen_commit_record(repo, commit):
         insertions, deletions = st.insertions, st.deletions
 
         for patch in diff:
-            details.append({
-                'op': patch.delta.status_char(),
-                'file_path': patch.delta.new_file.path
-            })
+            op = patch.delta.status_char()
+            details[op].append(patch.delta.new_file.path)
             if patch.delta.new_file.path != patch.delta.old_file.path:
                 print(f'(was {patch.delta.old_file.path})')
                 assert False
@@ -60,10 +62,8 @@ def gen_commit_record(repo, commit):
         insertions, deletions = st.insertions, st.deletions
 
         for patch in diff:
-            details.append({
-                'op': patch.delta.status_char(),
-                'file_path': patch.delta.new_file.path
-            })
+            op = patch.delta.status_char()
+            details[op].append(patch.delta.new_file.path)
             if patch.delta.new_file.path != patch.delta.old_file.path:
                 print(f'(was {patch.delta.old_file.path})')
                 assert False
@@ -75,7 +75,8 @@ def gen_commit_record(repo, commit):
         is_merge_commit = True
 
     return {
-        'commit_sha': str(commit.id)[:7],
+        'commit_sha': str(commit.id),
+        'commit_msg': commit.message,
         'is_merge_commit': is_merge_commit,
         'author_name': author_name,
         'author_email': author_email,

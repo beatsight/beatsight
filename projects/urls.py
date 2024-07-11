@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.ListCreate.as_view(), name='project-list'),
+    path("activities/", views.ActivityList.as_view(), name='project-activities'),
     path("<str:name>/", views.Detail.as_view({
         'get': 'retrieve',
         'put': 'update',

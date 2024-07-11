@@ -1,5 +1,5 @@
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, NotFound
 from django.http import Http404
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
 from django.contrib.auth import logout
@@ -10,22 +10,21 @@ from .forms import LoginForm, UserPasswordResetForm
 def custom_exception_handler(exc, context):
     # Call the default exception handler first to get the standard error response.
     response = exception_handler(exc, context)
-
+    print(type(exc))
     # Now add the custom error response.
-    if isinstance(exc, Http404):
+    if isinstance(exc, Http404) or isinstance(exc, NotFound):
         custom_response = {'status': 'failed', 'data': None, 'error': 'Resource not found', 'error_code': '404_not_found' }
     elif isinstance(exc, NotAuthenticated):
         custom_response = {'status': 'failed', 'data': None, 'error': exc.default_detail, 'error_code': 'not_authenticated'}
     elif isinstance(exc, PermissionDenied):
         custom_response = {'status': 'failed', 'data': None, 'error': '权限错误，请重试', 'error_code': '430_permission_denied' }
     else:
-        custom_response = {'status': 'failed', 'data': None, 'error': 'Internal Server Error', 'error_code': '500_internal_server_error' }
+        custom_response = {'status': 'failed', 'data': None, 'error': exc, 'error_code': '500_internal_server_error' }
 
     if response is not None:
         response.data = custom_response
 
     return response
-
 
 # Authentication
 class UserLoginView(LoginView):

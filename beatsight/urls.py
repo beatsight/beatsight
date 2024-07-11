@@ -34,7 +34,7 @@ def home(request):
 urlpatterns = [
     path('', home),
 
-
+    path('api/dashboard/', include('dashboard.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/developers/', include('developers.urls')),
     path('api/profiles/', include('profiles.urls')),

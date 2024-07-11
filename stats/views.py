@@ -16,7 +16,8 @@ import duckdb
 import pygit2
 
 from beatsight.utils.pl_ext import PL_EXT
-from projects.models import Project, DetailSerializer, SimpleSerializer, Language, ProjectLanguage
+from beatsight.utils.dt import timestamp_to_dt
+from projects.models import Project, Language, ProjectLanguage, ProjectActiviy
 from developers.models import (
     Developer, DeveloperLanguage, DeveloperContribution, DeveloperContributionSerializer,
     DeveloperActivity
@@ -34,42 +35,230 @@ from .gitdata import gen_commit_record
 
 def get_a_project_stat(p: Project, force=False):
     """Get stat data of a project."""
-    gen_new = False
-    if force is True:
-        last_sync_commit = ''
-        gen_new = True
+    replace = force
 
-    if p.head_commit != p.last_stat_commit:
-        last_sync_commit = p.last_stat_commit
-        gen_new = True
+    # get whole/partial repo history
+    db = os.path.join(settings.STAT_DB_DIR, f"{p.name}_log")
+    whole_history_df = gen_whole_history_df(p, db, replace=replace)
+    repo = GitRepository(p.repo_path, whole_history_df=whole_history_df)
 
-    if gen_new:
-        # get whole/partial repo history
-        db = os.path.join(settings.STAT_DB_DIR, f"{p.name}_log")
-        whole_history_df = gen_whole_history_df(p, db)
-        repo = GitRepository(p.repo_path, whole_history_df=whole_history_df)
+    # save current commit as last stat commit
+    p.last_stat_commit = p.head_commit
+    p.save()
 
-        # save current commit as last stat commit
-        p.last_stat_commit = p.head_commit
-        p.save()
+    ### general data
+    p.files_count = repo.head.files_count
+    ext_df = repo.head.files_extensions_summary
+    lang_cnt = defaultdict(int)
+    for index, row in ext_df[~ext_df['is_binary']].iterrows():
+        extension = row['extension']
+        if extension not in PL_EXT:
+            continue
+        lines_count = row['lines_count']
+        lang_cnt[PL_EXT[extension]] += lines_count
 
-        ### general data
+    for lang, cnt in lang_cnt.items():
+        try:
+            lang_obj = Language.objects.get(name=lang)
+        except Language.DoesNotExist:
+            lang_obj = Language(name=lang)
+            lang_obj.save()
+
+        try:
+            proj_lang = ProjectLanguage.objects.get(project=p, language=lang_obj)
+        except ProjectLanguage.DoesNotExist:
+            proj_lang = ProjectLanguage(project=p, language=lang_obj)
+        proj_lang.lines_count = cnt
+        proj_lang.save()
+
+    sql = f''' SELECT
+    commit_sha,
+    author_timestamp
+    FROM
+    gitlog
+    ORDER BY
+    author_timestamp ASC
+    LIMIT 1;
+    '''
+    res = fetch_from_duckdb(sql, db)
+    assert len(res) == 1
+    p.first_commit_id, p.first_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
+
+    sql = f''' SELECT
+    commit_sha,
+    author_timestamp
+    FROM
+    gitlog
+    ORDER BY
+    author_timestamp DESC
+    LIMIT 1;
+    '''
+    res = fetch_from_duckdb(sql, db)
+    assert len(res) == 1
+    p.last_commit_id, p.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
+    p.age = (p.last_commit_at - p.first_commit_at).days
+
+    sql = f''' SELECT
+    COUNT(*) AS total_commits,
+    COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
+    FROM
+    gitlog
+    '''
+    res = fetch_from_duckdb(sql, db)
+    assert len(res) == 1
+    p.commits_count, p.active_days = res[0]
+    p.save()
+    p.refresh_from_db()
+
+    ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
+    # activity_data = data['activity']
+    try:
+        ac = ActivityData.objects.get(project=p)
+    except ActivityData.DoesNotExist:
+        ac = ActivityData(project=p)
+
+    sql = f'''SELECT
+    DATE_TRUNC('week', TO_TIMESTAMP(author_timestamp)) AS week,
+    COUNT(commit_sha) AS commit_count
+    FROM gitlog
+    GROUP BY week
+    ORDER BY week;
+    '''
+    weekly_activity = []
+    for e in fetch_from_duckdb(sql, db):
+        weekly_activity.append({
+            'week': e[0],
+            'commit_count': e[1],
+        })
+    ac.weekly_activity = weekly_activity
+
+    sql = f'''SELECT
+    DATE_TRUNC('month', TO_TIMESTAMP(author_timestamp)) AS month,
+    COUNT(commit_sha) AS commit_count
+    FROM gitlog
+    GROUP BY month
+    ORDER BY month;
+    '''
+    monthly_activity = []
+    for e in fetch_from_duckdb(sql, db):
+        monthly_activity.append({
+            'month': e[0],
+            'commit_count': e[1],
+        })
+    ac.monthly_activity = monthly_activity
+
+    sql = f'''SELECT
+    DATE_TRUNC('year', TO_TIMESTAMP(author_timestamp)) AS year,
+    COUNT(commit_sha) AS commit_count
+    FROM gitlog
+    GROUP BY year
+    ORDER BY year;
+    '''
+    yearly_activity = []
+    for e in fetch_from_duckdb(sql, db):
+        yearly_activity.append({
+            'year': e[0],
+            'commit_count': e[1],
+        })
+    ac.yearly_activity = yearly_activity
+    ac.save()
+
+    ### authors stat (insertions, deletions, commits_count, active_days_count ...)
+    # author_data = data['authors']
+
+    # sql = f'''
+    # SELECT author_email,
+    # FIRST(author_name) AS author_name,
+    # COUNT(*) AS commit_count,
+    # SUM(insertions) AS total_insertions,
+    # SUM(deletions) AS total_deletions,
+    # CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
+    # CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
+    # COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
+    # FROM {p.name}
+    # GROUP BY author_email
+    # ORDER BY commit_count DESC;
+    # '''
+
+    sql = f'''
+    SELECT author_email,
+    FIRST(author_name) AS author_name,
+    CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
+    CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
+    FROM gitlog
+    GROUP BY author_email;
+    '''
+    for e in fetch_from_duckdb(sql, db):
         # try:
-        #     gd = GeneralData.objects.get(project=p)
-        # except GeneralData.DoesNotExist:
-        #     gd = GeneralData(project=p)
+        #     au = AuthorData.objects.get(project=p, author_email=e[0])
+        # except AuthorData.DoesNotExist:
+        #     au = AuthorData(project=p, author_email=e[0])
 
-        p.files_count = repo.head.files_count
-        ext_df = repo.head.files_extensions_summary
-        lang_cnt = defaultdict(int)
-        for index, row in ext_df[~ext_df['is_binary']].iterrows():
-            extension = row['extension']
-            if extension not in PL_EXT:
-                continue
-            lines_count = row['lines_count']
-            lang_cnt[PL_EXT[extension]] += lines_count
+        # au.author_email, au.author_name, au.commit_count, au.total_insertions, au.total_deletions = e[0], e[1], e[2], e[3], e[4]
+        # au.first_commit_date, au.last_commit_date = timezone.make_aware(e[5]), timezone.make_aware(e[6])
+        # au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
+        # au.active_days = e[7]
+        # au.save()
 
-        for lang, cnt in lang_cnt.items():
+        try:
+            dev = Developer.objects.get(email=e[0])
+        except Developer.DoesNotExist:
+            dev = Developer(email=e[0])
+        dev.name = e[1]
+        dev.set_first_last_commit_at(timezone.make_aware(e[2]), timezone.make_aware(e[3]))
+        # dev.total_commits = au.commit_count
+        # dev.total_insertions = au.total_insertions
+        # dev.total_deletions = au.total_deletions
+        # dev.active_days = au.active_days
+        dev.save()
+        dev.add_a_project(p)
+
+    # save user daily commits count df
+    # should be calculated in local timezones
+    df = repo.whole_history_df
+    df['author_date'] = pd.to_datetime(df['author_timestamp'], unit='s', utc=True) + \
+        pd.TimedeltaIndex(df['author_tz_offset'], unit='m')
+    df['author_date'] = df['author_date'].dt.date
+
+    # Group by author_email and date, then calculate the sum of insertions and deletions
+    daily_stats = df.groupby(['author_email', 'author_date']).agg({
+        'insertions': 'sum',
+        'deletions': 'sum',
+        'commit_sha': 'count',
+        'file_exts': lambda x: list({y for lst in x for y in lst})
+
+    }).reset_index()
+    daily_stats.columns = ['author_email', 'author_date', 'insertions', 'deletions', 'daily_commit_count', 'file_exts']
+    daily_stats = daily_stats[daily_stats['daily_commit_count'] > 0]
+    daily_stats['project'] = p.name
+
+    daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
+    create_author_daily_commits_table(db=daily_commits_db)
+    if replace:
+        delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'",
+                                      db=daily_commits_db)
+    save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append", db=daily_commits_db)
+
+    # calculate authors' activities, most used languages, contributions
+    for email in daily_stats['author_email'].unique().tolist():
+        try:
+            dev = Developer.objects.get(email=email)
+        except Developer.DoesNotExist:
+            # raise warning
+            continue
+
+        populate_general_data(dev, db=daily_commits_db)
+
+        try:
+            dev_ac = DeveloperActivity.objects.get(developer=dev)
+        except DeveloperActivity.DoesNotExist:
+            dev_ac = DeveloperActivity(developer=dev)
+
+        dev_ac.daily_activity = get_author_daily_commit_count(email, db=daily_commits_db)
+        dev_ac.weekly_activity = get_author_weekly_commit_count(email, db=daily_commits_db)
+        dev_ac.save()
+
+        for lang, cnt in get_most_used_langs(email, db=daily_commits_db):
             try:
                 lang_obj = Language.objects.get(name=lang)
             except Language.DoesNotExist:
@@ -77,248 +266,21 @@ def get_a_project_stat(p: Project, force=False):
                 lang_obj.save()
 
             try:
-                proj_lang = ProjectLanguage.objects.get(project=p, language=lang_obj)
-            except ProjectLanguage.DoesNotExist:
-                proj_lang = ProjectLanguage(project=p, language=lang_obj)
-            proj_lang.lines_count = cnt
-            proj_lang.save()
+                dev_lang = DeveloperLanguage.objects.get(developer=dev, language=lang_obj)
+            except DeveloperLanguage.DoesNotExist:
+                dev_lang = DeveloperLanguage(developer=dev, language=lang_obj)
+            dev_lang.use_count = cnt
+            dev_lang.save()
 
-        sql = f''' SELECT
-        commit_sha,
-        author_timestamp
-        FROM
-        gitlog
-        ORDER BY
-        author_timestamp ASC
-        LIMIT 1;
-        '''
-        res = fetch_from_duckdb(sql, db)
-        assert len(res) == 1
-        p.first_commit_id, p.first_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
-
-        sql = f''' SELECT
-        commit_sha,
-        author_timestamp
-        FROM
-        gitlog
-        ORDER BY
-        author_timestamp DESC
-        LIMIT 1;
-        '''
-        res = fetch_from_duckdb(sql, db)
-        assert len(res) == 1
-        p.last_commit_id, p.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
-        p.age = (p.last_commit_at - p.first_commit_at).days
-
-        sql = f''' SELECT
-  COUNT(*) AS total_commits,
-  COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
-FROM
-   gitlog
-'''
-        res = fetch_from_duckdb(sql, db)
-        assert len(res) == 1
-        p.commits_count, p.active_days = res[0]
-        p.save()
-        p.refresh_from_db()
-
-        ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
-        # activity_data = data['activity']
         try:
-            ac = ActivityData.objects.get(project=p)
-        except ActivityData.DoesNotExist:
-            ac = ActivityData(project=p)
-
-        sql = f'''SELECT
-    DATE_TRUNC('week', TO_TIMESTAMP(author_timestamp)) AS week,
-    COUNT(commit_sha) AS commit_count
-FROM gitlog
-GROUP BY week
-ORDER BY week;
-        '''
-        weekly_activity = []
-        for e in fetch_from_duckdb(sql, db):
-            weekly_activity.append({
-                'week': e[0],
-                'commit_count': e[1],
-            })
-        ac.weekly_activity = weekly_activity
-
-        sql = f'''SELECT
-    DATE_TRUNC('month', TO_TIMESTAMP(author_timestamp)) AS month,
-    COUNT(commit_sha) AS commit_count
-FROM gitlog
-GROUP BY month
-ORDER BY month;
-        '''
-        monthly_activity = []
-        for e in fetch_from_duckdb(sql, db):
-            monthly_activity.append({
-                'month': e[0],
-                'commit_count': e[1],
-            })
-        ac.monthly_activity = monthly_activity
-
-        sql = f'''SELECT
-    DATE_TRUNC('year', TO_TIMESTAMP(author_timestamp)) AS year,
-    COUNT(commit_sha) AS commit_count
-FROM gitlog
-GROUP BY year
-ORDER BY year;
-        '''
-        yearly_activity = []
-        for e in fetch_from_duckdb(sql, db):
-            yearly_activity.append({
-                'year': e[0],
-                'commit_count': e[1],
-            })
-        ac.yearly_activity = yearly_activity
-        ac.save()
-
-        ### authors stat (insertions, deletions, commits_count, active_days_count ...)
-        # author_data = data['authors']
-
-        # sql = f'''
-        # SELECT author_email,
-        # FIRST(author_name) AS author_name,
-        # COUNT(*) AS commit_count,
-        # SUM(insertions) AS total_insertions,
-        # SUM(deletions) AS total_deletions,
-        # CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
-        # CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
-        # COUNT(DISTINCT DATE_TRUNC('day', TO_TIMESTAMP(author_timestamp))) AS active_days_count
-        # FROM {p.name}
-        # GROUP BY author_email
-        # ORDER BY commit_count DESC;
-        # '''
-
-        sql = f'''
-        SELECT author_email,
-        FIRST(author_name) AS author_name,
-        CAST(TO_TIMESTAMP(min(author_timestamp)) AS DATETIME) AS first_commit_datetime,
-        CAST(TO_TIMESTAMP(max(author_timestamp)) AS DATETIME) AS lastest_commit_datetime,
-        FROM gitlog
-        GROUP BY author_email;
-        '''
-        for e in fetch_from_duckdb(sql, db):
-            # try:
-            #     au = AuthorData.objects.get(project=p, author_email=e[0])
-            # except AuthorData.DoesNotExist:
-            #     au = AuthorData(project=p, author_email=e[0])
-
-            # au.author_email, au.author_name, au.commit_count, au.total_insertions, au.total_deletions = e[0], e[1], e[2], e[3], e[4]
-            # au.first_commit_date, au.last_commit_date = timezone.make_aware(e[5]), timezone.make_aware(e[6])
-            # au.contributed_days = (au.last_commit_date - au.first_commit_date).days + 1
-            # au.active_days = e[7]
-            # au.save()
-
-            try:
-                dev = Developer.objects.get(email=e[0])
-            except Developer.DoesNotExist:
-                dev = Developer(email=e[0])
-            dev.name = e[1]
-            dev.set_first_last_commit_at(timezone.make_aware(e[2]), timezone.make_aware(e[3]))
-            # dev.total_commits = au.commit_count
-            # dev.total_insertions = au.total_insertions
-            # dev.total_deletions = au.total_deletions
-            # dev.active_days = au.active_days
-            dev.save()
-            dev.add_a_project(p)
-
-        ## Do not stat files count/size for the moment
-        # ### files stat (file type, size, count, lines count)
-        # files_data = data['files']
-        # if fd is None:
-        #     fd = FileData(project=p)
-        # fd.file_summary = files_data['file_summary']
-        # fd.total_files_count = files_data['total_files_count']
-        # fd.total_lines_count = files_data['total_lines_count']
-        # fd.save()
-        # fd_s = FileDataSerializer(fd)
-
-        # save user daily commits count df
-        # should be calculated in local timezones
-        df = repo.whole_history_df
-        df['author_date'] = pd.to_datetime(df['author_timestamp'], unit='s', utc=True) + \
-            pd.TimedeltaIndex(df['author_tz_offset'], unit='m')
-        df['author_date'] = df['author_date'].dt.date
-
-        # Group by author_email and date, then calculate the sum of insertions and deletions
-        daily_stats = df.groupby(['author_email', 'author_date']).agg({
-            'insertions': 'sum',
-            'deletions': 'sum',
-            'commit_sha': 'count',
-            'file_exts': lambda x: list({y for lst in x for y in lst})
-
-        }).reset_index()
-        daily_stats.columns = ['author_email', 'author_date', 'insertions', 'deletions', 'daily_commit_count', 'file_exts']
-        daily_stats = daily_stats[daily_stats['daily_commit_count'] > 0]
-        daily_stats['project'] = p.name
-
-        daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
-        create_author_daily_commits_table(db=daily_commits_db)
-        if last_sync_commit == '':
-            delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'",
-                                          db=daily_commits_db)
-        save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append", db=daily_commits_db)
-
-        # calculate authors' activities, most used languages, contributions
-        for email in daily_stats['author_email'].unique().tolist():
-            try:
-                dev = Developer.objects.get(email=email)
-            except Developer.DoesNotExist:
-                # raise warning
-                continue
-
-            populate_general_data(dev, db=daily_commits_db)
-
-            try:
-                dev_ac = DeveloperActivity.objects.get(developer=dev)
-            except DeveloperActivity.DoesNotExist:
-                dev_ac = DeveloperActivity(developer=dev)
-
-            dev_ac.daily_activity = get_author_daily_commit_count(email, db=daily_commits_db)
-            dev_ac.weekly_activity = get_author_weekly_commit_count(email, db=daily_commits_db)
-            dev_ac.save()
-
-            for lang, cnt in get_most_used_langs(email, db=daily_commits_db):
-                try:
-                    lang_obj = Language.objects.get(name=lang)
-                except Language.DoesNotExist:
-                    lang_obj = Language(name=lang)
-                    lang_obj.save()
-
-                try:
-                    dev_lang = DeveloperLanguage.objects.get(developer=dev, language=lang_obj)
-                except DeveloperLanguage.DoesNotExist:
-                    dev_lang = DeveloperLanguage(developer=dev, language=lang_obj)
-                dev_lang.use_count = cnt
-                dev_lang.save()
-
-            try:
-                dev_contrib = DeveloperContribution.objects.get(developer=dev, project=p)
-            except DeveloperContribution.DoesNotExist:
-                dev_contrib = DeveloperContribution(developer=dev, project=p)
-            dev_contrib.daily_contribution = get_author_daily_contributions(
-                email, p, db=daily_commits_db
-            )
-            dev_contrib.commits_count = sum(e['daily_commit_count'] for e in dev_contrib.daily_contribution)
-            dev_contrib.save()
-
-    # show the data
-    p_s = SimpleSerializer(p)
-    # gd_s = GeneralDataSerializer(gd)
-    ac_s = ActivityDataSerializer(ac)
-    author_data = []
-    for e in DeveloperContribution.objects.filter(project=p):
-        author_data.append(DeveloperContributionSerializer(e).data)
-
-    return {
-        'general': p_s.data,
-        'activity': ac_s.data,
-        'authors': author_data,
-        # 'files': fd_s.data if fd_s else {},
-    }
+            dev_contrib = DeveloperContribution.objects.get(developer=dev, project=p)
+        except DeveloperContribution.DoesNotExist:
+            dev_contrib = DeveloperContribution(developer=dev, project=p)
+        dev_contrib.daily_contribution = get_author_daily_contributions(
+            email, p, db=daily_commits_db
+        )
+        dev_contrib.commits_count = sum(e['daily_commit_count'] for e in dev_contrib.daily_contribution)
+        dev_contrib.save()
 
 def create_author_daily_commits_table(db):
     with duckdb.connect(db) as con:
@@ -340,7 +302,7 @@ def create_author_daily_commits_table(db):
                 """
             )
 
-def gen_whole_history_df(p, db):
+def gen_whole_history_df(p, db, replace=False):
     repo = pygit2.Repository(p.repo_path)
 
     with duckdb.connect(db) as con:
@@ -376,7 +338,7 @@ def gen_whole_history_df(p, db):
         if last_row:
             last_seen_commit = last_row[1]
 
-    if last_seen_commit:
+    if last_seen_commit and not replace:
         last_seen_commit_obj = repo.get(last_seen_commit)
     else:
         last_seen_commit_obj = None
@@ -390,16 +352,34 @@ def gen_whole_history_df(p, db):
 
     if new_commit_hashes:
         records = []
+        activities = []
         for cid in new_commit_hashes[::-1]:
             commit = repo.get(cid)
-            record = gen_commit_record(repo, commit)
-            records.append(record)
+            e = gen_commit_record(repo, commit)
+            if not e['is_merge_commit']:
+                author_datetime = timestamp_to_dt(e['author_timestamp'], e['author_tz_offset'])
+                activities.append(ProjectActiviy(
+                    project=p,
+                    commit_sha=e['commit_sha'],
+                    commit_message=e['commit_msg'].strip(),
+                    author_name=e['author_name'],
+                    author_email=e['author_email'],
+                    author_datetime=author_datetime,
+                    details=e['details'],
+                ))
+
+            del e['commit_msg']
+            del e['details']
+            records.append(e)
+
+        ProjectActiviy.objects.bulk_create(activities, batch_size=999, ignore_conflicts=True)
+
         df = pd.DataFrame(records)
         df['author_name'] = pd.Categorical(df['author_name'])
         df['author_email'] = pd.Categorical(df['author_email'])
         with duckdb.connect(db) as con:
             df.to_sql("gitlog", con, if_exists="append", index=False)
-
+        
     query = "SELECT * FROM 'gitlog'"
     with duckdb.connect(db) as con:
         df = con.sql(query).df()

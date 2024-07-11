@@ -2,6 +2,7 @@ import random
 
 from django.db import models
 from django.utils import timezone
+from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework import serializers as S
 
 from beatsight.models import TimestampedModel
@@ -85,6 +86,22 @@ class ProjectLanguage(TimestampedModel):
     def __str__(self):
         return f"{self.project.name} - {self.language.name}"
 
+
+class ProjectActiviy(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    commit_sha = models.CharField(max_length=50)
+    commit_message = models.CharField(max_length=2000)
+    author_name = models.CharField(max_length=200)
+    author_email = models.CharField(max_length=200, db_index=True)
+    author_datetime = models.DateTimeField(db_index=True)
+    details = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['project', 'commit_sha'], name='unique_proj_commit')
+        ]
+
+#################### serializers
 class ProjectLanguageSerializer(S.ModelSerializer):
     language_name = S.ReadOnlyField(source='language.name')
     language_color = S.SerializerMethodField()
@@ -101,6 +118,34 @@ class ProjectLanguageSerializer(S.ModelSerializer):
             blue = random.randint(0, 255)
             return red, green, blue
         return d['rgb']
+
+class ProjectActiviySerializer(S.ModelSerializer):
+    project_name = S.ReadOnlyField(source='project.name')
+    details_str = S.SerializerMethodField()
+
+    class Meta:
+        model = ProjectActiviy
+        exclude = []
+
+    def get_details_str(self, obj):
+        ret = []
+        for k, v in obj.details.items():
+            if not v:
+                continue
+
+            if k == 'A':
+                action = '添加了'
+            elif k == 'M':
+                action = '修改了'
+            elif k == 'D':
+                action = '删除了'
+            else:
+                assert False
+            if len(v) == 1:
+                ret.append(f'{action} {v[0]}')
+            else:
+                ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
+        return '；'.join(ret)
 
 class SimpleSerializer(S.ModelSerializer):
     recent_weekly_activity = S.SerializerMethodField()

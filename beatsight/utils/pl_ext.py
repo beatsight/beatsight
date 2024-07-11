@@ -41,6 +41,7 @@ PL_EXT = {
     'lua': 'Lua',
     'm': 'MATLAB',
     'make': 'Makefile',
+    'makefile': 'Makefile',
     'ml': 'OCaml',
     'mli': 'OCaml',
     'nawk': 'Awk',

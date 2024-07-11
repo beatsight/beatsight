@@ -144,9 +144,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         # 'rest_framework.authentication.BasicAuthentication'
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'beatsight.pagination.CustomPagination',
     'EXCEPTION_HANDLER': 'beatsight.views.custom_exception_handler',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 20
 }
 
 # Celery settings

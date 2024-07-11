@@ -14,6 +14,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 
 from stats.models import ActivityData
 from beatsight.utils import CustomJSONEncoder
@@ -21,7 +22,7 @@ from beatsight.utils.response import ok, client_error, server_error
 from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
-from .models import Project, SimpleSerializer, DetailSerializer
+from .models import Project, SimpleSerializer, DetailSerializer, ProjectActiviy, ProjectActiviySerializer
 from .tasks import init_repo_task, stat_repo_task, switch_repo_branch_task
 
 logger = logging.getLogger(settings.LOGNAME)
@@ -173,6 +174,12 @@ class Detail(GenericViewSet):
             serializer = DeveloperContributionSerializer(e)
             res.append(serializer.data)
             return Response(res)
+
+
+class ActivityList(generics.ListAPIView):
+    queryset = ProjectActiviy.objects.all().order_by('-author_datetime')
+    serializer_class = ProjectActiviySerializer
+    # pagination_class = PageNumberPagination
 
 
 # #### --------------------
