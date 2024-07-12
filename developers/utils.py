@@ -15,10 +15,10 @@ def calculate_rank(total_commits, total_repos, active_days_ratio, total_modifica
     commits_median = 250
     commits_weight = 2
 
-    repos_median = 5
+    repos_median = 2
     repos_weight = 3
 
-    active_days_ratio_median = 0.3
+    active_days_ratio_median = 0.2
     active_days_ratio_weight = 3
 
     modifications_median = 10000

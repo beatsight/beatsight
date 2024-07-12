@@ -132,3 +132,19 @@ def pull_repo_updates(repo_path, branch):
         os.chdir(old_cwd)
 
     return has_updates
+
+def update_remote_url(repo_path, repo_url):
+
+    # Change directory to the cloned repository
+    old_cwd = os.getcwd()
+    os.chdir(repo_path)
+
+    remote_name = "origin"
+    result = subprocess.run(["git", "remote", "set-url", remote_name, repo_url],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    if result.returncode == 0:
+        logger.info(f"{repo_path}, Remote '{remote_name}' URL updated to '{repo_url}'")
+    else:
+        logger.error("{repo_path} Error updating remote URL:", result.stderr.strip())
+
+    os.chdir(old_cwd)

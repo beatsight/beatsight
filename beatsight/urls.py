@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.contrib import admin
@@ -29,7 +30,7 @@ from . import views
 
 @login_required(login_url='/accounts/login/')
 def home(request):
-    return redirect('/projects')
+    return redirect(settings.LOGIN_REDIRECT_URL)
 
 urlpatterns = [
     path('', home),

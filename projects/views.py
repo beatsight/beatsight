@@ -19,7 +19,7 @@ from rest_framework.pagination import PageNumberPagination
 from stats.models import ActivityData
 from beatsight.utils import CustomJSONEncoder
 from beatsight.utils.response import ok, client_error, server_error
-from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist
+from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist, update_remote_url
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
 from .models import Project, SimpleSerializer, DetailSerializer, ProjectActiviy, ProjectActiviySerializer
@@ -153,7 +153,7 @@ class Detail(GenericViewSet):
         p.refresh_from_db()
 
         if p.repo_url != old_url:
-            init_repo_task.delay(p.id, p.repo_url, p.name, p.repo_branch)
+            update_remote_url(p.repo_path, p.repo_url)
 
         if p.repo_branch != old_branch:
             switch_repo_branch_task.delay(p.id, p.repo_branch)
