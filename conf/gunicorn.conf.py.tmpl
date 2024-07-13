@@ -1,7 +1,8 @@
 import multiprocessing
 
-# Bind Gunicorn to a Unix socket
-bind = 'unix:/tmp/gunicorn.sock'
+# # Bind Gunicorn to a Unix socket
+# bind = 'unix:/tmp/gunicorn.sock'
+bind = '127.0.0.1:9998'
 
 # Number of worker processes
 workers = multiprocessing.cpu_count() * 2 + 1

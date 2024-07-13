@@ -1,10 +1,16 @@
 import json
+from collections import defaultdict
 
 import pandas as pd
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
+from projects.models import ProjectActiviy, ProjectActiviySerializer
+from beatsight.pagination import CustomPagination
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
 
@@ -40,3 +46,27 @@ def contributions(request, email):
         res.append(serializer.data)
 
     return JsonResponse(res, safe=False)
+
+@api_view(['GET'])
+def activities(request, email):
+    qs = ProjectActiviy.objects.filter(author_email=email).order_by(
+        '-author_datetime'
+    )
+
+    pnp = CustomPagination()
+    page = pnp.paginate_queryset(qs, request)
+    s = ProjectActiviySerializer(page, many=True)
+
+    res = defaultdict(list)
+    for e in s.data:
+        dt = e['author_datetime'].split('T')[0]
+        res[dt].append(e)
+
+    data = []
+    for k, lst in res.items():
+        data.append({
+            'date': k,
+            'result': lst
+        })
+
+    return pnp.get_paginated_response(data)
