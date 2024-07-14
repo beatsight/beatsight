@@ -65,8 +65,11 @@ class ActivityData(models.Model):
             # de-serialize jsondate string
             if isinstance(item['week'], datetime):
                 week_date = item['week']
-            else:
-                week_date = datetime.strptime(item['week'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=pytz.utc)
+            if isinstance(item['week'], str):
+                if 'Z' in item['week']:
+                    week_date = datetime.strptime(item['week'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=pytz.utc)
+                else:
+                    week_date = datetime.fromisoformat(item['week'])
 
             if start_date <= week_date <= this_monday:
                 data_dict[week_date] = item['commit_count']
