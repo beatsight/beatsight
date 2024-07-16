@@ -1,9 +1,11 @@
 import json
 from collections import defaultdict
+import datetime
 
 import pandas as pd
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
@@ -11,6 +13,7 @@ from rest_framework.decorators import api_view
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 from projects.models import ProjectActiviy, ProjectActiviySerializer
 from beatsight.pagination import CustomPagination
+from beatsight.utils.response import ok
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
 
@@ -49,6 +52,10 @@ def contributions(request, email):
 
 @api_view(['GET'])
 def activities(request, email):
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+
+
     qs = ProjectActiviy.objects.filter(author_email=email).order_by(
         '-author_datetime'
     )
@@ -70,3 +77,37 @@ def activities(request, email):
         })
 
     return pnp.get_paginated_response(data)
+
+@api_view(['GET'])
+def contrib_calendar(request, email):
+    today = timezone.now().date()
+    one_year_ago = today - datetime.timedelta(days=366)
+
+    res = {}
+    current_date = one_year_ago
+    while current_date <= today:
+        date_str = current_date.strftime('%Y-%m-%d')
+        res[date_str] = []
+        current_date += datetime.timedelta(days=1)
+
+    for e in ProjectActiviy.objects.filter(author_email=email, author_datetime__gt=one_year_ago):
+        date_str = e.author_datetime.strftime('%Y-%m-%d')
+        res[date_str].append(e.commit_sha)
+
+    data = []
+    for date_str, val in res.items():
+        cnt = len(val)
+
+        if cnt == 0:
+            level = 0
+        elif cnt >= 8:
+            level = 4
+        else:
+            level = min(4, cnt // 2 + 1)
+
+        data.append({
+            'date': date_str,
+            'count': cnt,
+            'level': level
+        })
+    return ok(data)

@@ -205,9 +205,9 @@ class SimpleSerializer(S.ModelSerializer):
 class DetailSerializer(SimpleSerializer):
     projects = S.SerializerMethodField()
     developer_languages = DeveloperLanguageSerializer(source='developerlanguage_set', many=True, read_only=True)
-    developer_activity = S.SerializerMethodField()
+    # developer_activity = S.SerializerMethodField()
     contribution = S.SerializerMethodField()
-    recent_weekly_activity = S.SerializerMethodField()
+    # recent_weekly_activity = S.SerializerMethodField()
 
     class Meta:
         model = Developer
