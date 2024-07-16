@@ -1,11 +1,12 @@
-import json
 from collections import defaultdict
 import datetime
+import pytz
 
-import pandas as pd
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.timezone import make_aware
+from django.conf import settings
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
@@ -52,13 +53,29 @@ def contributions(request, email):
 
 @api_view(['GET'])
 def activities(request, email):
-    start_date = request.GET.get('start_date', '')
-    end_date = request.GET.get('end_date', '')
-
-
     qs = ProjectActiviy.objects.filter(author_email=email).order_by(
         '-author_datetime'
     )
+
+    start_date, end_date = None, None
+    date = request.GET.get('date')
+    if date:
+        native_dt = datetime.datetime.strptime(date, '%Y-%m-%d')
+        native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+
+    year = request.GET.get('year')
+    if year:
+        year = int(year)
+        native_start_dt = datetime.datetime(year, 1, 1, hour=0, minute=0, second=0, microsecond=0)
+        native_end_dt = datetime.datetime(year, 12, 31, hour=23, minute=59, second=59, microsecond=999999)
+        start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+
+    if start_date and end_date:
+        qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
 
     pnp = CustomPagination()
     page = pnp.paginate_queryset(qs, request)
@@ -80,17 +97,23 @@ def activities(request, email):
 
 @api_view(['GET'])
 def contrib_calendar(request, email):
-    today = timezone.now().date()
-    one_year_ago = today - datetime.timedelta(days=366)
+    year = request.GET.get('year')
+    if not year:
+        end_date = timezone.now().date()
+        start_date = end_date - datetime.timedelta(days=366)
+    else:
+         year = int(year)
+         start_date = datetime.date(year, 1, 1)
+         end_date = datetime.date(year, 12, 31)
 
     res = {}
-    current_date = one_year_ago
-    while current_date <= today:
+    current_date = start_date
+    while current_date <= end_date:
         date_str = current_date.strftime('%Y-%m-%d')
         res[date_str] = []
         current_date += datetime.timedelta(days=1)
 
-    for e in ProjectActiviy.objects.filter(author_email=email, author_datetime__gt=one_year_ago):
+    for e in ProjectActiviy.objects.filter(author_email=email, author_datetime__gt=start_date, author_datetime__lt=end_date):
         date_str = e.author_datetime.strftime('%Y-%m-%d')
         res[date_str].append(e.commit_sha)
 
