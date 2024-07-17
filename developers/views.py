@@ -124,13 +124,16 @@ def contrib_calendar(request, email):
     data = []
     for date_str, val in res.items():
         cnt = len(val)
+        level = 4
 
         if cnt == 0:
             level = 0
-        elif cnt >= 8:
-            level = 4
-        else:
-            level = min(4, cnt // 2 + 1)
+        if cnt >= 1 and cnt < 3:
+            level = 1
+        if cnt >=3 and cnt < 6:
+            level = 2
+        if cnt >= 6 and cnt < 9:
+            level = 3
 
         data.append({
             'date': date_str,
