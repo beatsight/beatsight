@@ -113,7 +113,11 @@ def contrib_calendar(request, email):
         res[date_str] = []
         current_date += datetime.timedelta(days=1)
 
-    for e in ProjectActiviy.objects.filter(author_email=email, author_datetime__gt=start_date, author_datetime__lt=end_date):
+    for e in ProjectActiviy.objects.filter(
+            author_email=email,
+            author_datetime__gte=start_date,
+            author_datetime__lt=end_date + datetime.timedelta(days=1)
+    ):
         date_str = e.author_datetime.strftime('%Y-%m-%d')
         res[date_str].append(e.commit_sha)
 
