@@ -13,4 +13,10 @@ urlpatterns = [
     path("<str:name>/contributors/", views.Detail.as_view({
         'get': 'contributors',
     }), name="project-contributors"),
+    path("<str:name>/contrib_calendar/", views.Detail.as_view({
+        'get': 'contrib_calendar',
+    }), name="project-contrib-calendar"),
+    path("<str:name>/activities/", views.Detail.as_view({
+        'get': 'activities',
+    }), name="project-activities"),
 ]

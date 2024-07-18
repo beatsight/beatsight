@@ -1,12 +1,17 @@
+from collections import defaultdict
 import json
 import logging
+import datetime
 
+import pytz
 from django.conf import settings
 from django.http import Http404
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from django.utils.timezone import make_aware
 from rest_framework import permissions, viewsets
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
@@ -19,6 +24,7 @@ from rest_framework.pagination import PageNumberPagination
 from stats.models import ActivityData
 from beatsight.utils import CustomJSONEncoder
 from beatsight.utils.response import ok, client_error, server_error
+from beatsight.pagination import CustomPagination
 from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist, update_remote_url
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
@@ -175,6 +181,101 @@ class Detail(GenericViewSet):
             res.append(serializer.data)
             return Response(res)
 
+    @action(detail=True, methods=['get'])
+    def contrib_calendar(self, request, *args, **kwargs):
+        p = self.get_object()
+
+        year = request.GET.get('year')
+        if not year:
+            end_date = timezone.now().date()
+            start_date = end_date - datetime.timedelta(days=366)
+        else:
+             year = int(year)
+             start_date = datetime.date(year, 1, 1)
+             end_date = datetime.date(year, 12, 31)
+     
+        res = {}
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            res[date_str] = []
+            current_date += datetime.timedelta(days=1)
+     
+        for e in ProjectActiviy.objects.filter(
+                project=p,
+                author_datetime__gte=start_date,
+                author_datetime__lt=end_date + datetime.timedelta(days=1)
+        ):
+            date_str = e.author_datetime.strftime('%Y-%m-%d')
+            res[date_str].append(e.commit_sha)
+     
+        data = []
+        for date_str, val in res.items():
+            cnt = len(val)
+            level = 4
+     
+            if cnt == 0:
+                level = 0
+            if cnt >= 1 and cnt < 5:
+                level = 1
+            if cnt >=5 and cnt < 10:
+                level = 2
+            if cnt >= 10 and cnt < 15:
+                level = 3
+     
+            data.append({
+                'date': date_str,
+                'count': cnt,
+                'level': level
+            })
+        return ok(data)
+
+    @action(detail=True, methods=['get'])
+    def activities(self, request, *args, **kwargs):
+        p = self.get_object()
+
+        qs = ProjectActiviy.objects.filter(project=p).order_by(
+            '-author_datetime'
+        )
+     
+        start_date, end_date = None, None
+        date = request.GET.get('date')
+        if date:
+            native_dt = datetime.datetime.strptime(date, '%Y-%m-%d')
+            native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+            end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+     
+        year = request.GET.get('year')
+        if year:
+            year = int(year)
+            native_start_dt = datetime.datetime(year, 1, 1, hour=0, minute=0, second=0, microsecond=0)
+            native_end_dt = datetime.datetime(year, 12, 31, hour=23, minute=59, second=59, microsecond=999999)
+            start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+            end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+     
+        if start_date and end_date:
+            qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
+     
+        pnp = CustomPagination()
+        page = pnp.paginate_queryset(qs, request)
+        s = ProjectActiviySerializer(page, many=True)
+     
+        res = defaultdict(list)
+        for e in s.data:
+            dt = e['author_datetime'].split('T')[0]
+            res[dt].append(e)
+     
+        data = []
+        for k, lst in res.items():
+            data.append({
+                'date': k,
+                'result': lst
+            })
+     
+        return pnp.get_paginated_response(data)
+        
 
 class ActivityList(generics.ListAPIView):
     queryset = ProjectActiviy.objects.all().order_by('-author_datetime')
