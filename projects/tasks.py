@@ -79,7 +79,7 @@ def stat_repo_task(proj_id):
         return
 
     try:
-        get_a_project_stat(proj, force=True)
+        get_a_project_stat(proj, force=False)
         proj.sync_status = STAT_SUCCESS
         proj.save()
         logging.info(f'finish stat_repo_task {proj_id}')
