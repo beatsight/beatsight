@@ -95,6 +95,8 @@ class ProjectActiviy(models.Model):
     author_email = models.CharField(max_length=200, db_index=True)
     author_datetime = models.DateTimeField(db_index=True)
     details = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+    insertions = models.IntegerField(default=0)
+    deletions = models.IntegerField(default=0)
 
     class Meta:
         constraints = [

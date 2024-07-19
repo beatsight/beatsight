@@ -366,6 +366,8 @@ def gen_whole_history_df(p, db, replace=False):
                     author_email=e['author_email'],
                     author_datetime=author_datetime,
                     details=e['details'],
+                    insertions=e['insertions'],
+                    deletions=e['deletions'],
                 ))
 
             del e['commit_msg']
