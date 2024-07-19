@@ -1,13 +1,14 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import Project, Language
 
 
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(ModelAdmin):
     pass
 
 
-class LanguageAdmin(admin.ModelAdmin):
+class LanguageAdmin(ModelAdmin):
     pass
 
 admin.site.register(Language, LanguageAdmin)

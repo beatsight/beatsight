@@ -1,9 +1,10 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import Developer
 
 
-class DeveloperAdmin(admin.ModelAdmin):
+class DeveloperAdmin(ModelAdmin):
     pass
 
 
