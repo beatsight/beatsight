@@ -124,6 +124,7 @@ class ProjectLanguageSerializer(S.ModelSerializer):
 class ProjectActiviySerializer(S.ModelSerializer):
     project_name = S.ReadOnlyField(source='project.name')
     details_str = S.SerializerMethodField()
+    commit_link = S.SerializerMethodField()
 
     class Meta:
         model = ProjectActiviy
@@ -148,6 +149,16 @@ class ProjectActiviySerializer(S.ModelSerializer):
             else:
                 ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
         return '；'.join(ret)
+
+    def get_commit_link(self, obj):
+        if '@github.com' in obj.project.repo_url:
+            uri = obj.project.repo_url.split(':')[1].replace('.git', '')
+            return f'https://github.com/{uri}/commit/{obj.commit_sha}'
+        elif '@gitlab.com' in obj.project.repo_url:
+            uri = obj.project.repo_url.split(':')[1].replace('.git', '')
+            return f'https://gitlab.com/{uri}/-/commit/{obj.commit_sha}'
+        else:
+            return '#'
 
 class SimpleSerializer(S.ModelSerializer):
     recent_weekly_activity = S.SerializerMethodField()
