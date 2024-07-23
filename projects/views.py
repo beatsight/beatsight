@@ -64,6 +64,13 @@ class ListCreate(generics.ListCreateAPIView):
 
     def list(self, request):
         res = []
+        query_fields = request.GET.get('fields', '')
+
+        if query_fields:
+            fields = [e.strip() for e in query_fields.split(',')]
+            qs = self.get_queryset().values(*fields)
+            return ok(list(qs))
+
         for p in self.get_queryset():
             try:
                 ac = ActivityData.objects.get(project=p)

@@ -305,6 +305,9 @@ def create_author_daily_commits_table(db):
 def gen_whole_history_df(p, db, replace=False):
     repo = pygit2.Repository(p.repo_path)
 
+    if replace:
+        os.remove(db)
+
     with duckdb.connect(db) as con:
         table_exists = con.execute(
             "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'gitlog'"
@@ -380,9 +383,8 @@ def gen_whole_history_df(p, db, replace=False):
         df['author_name'] = pd.Categorical(df['author_name'])
         df['author_email'] = pd.Categorical(df['author_email'])
         with duckdb.connect(db) as con:
-            if_exists = 'replace' if replace else 'append'
-            df.to_sql("gitlog", con, if_exists=if_exists, index=False)
-        
+            df.to_sql("gitlog", con, if_exists='append', index=False)
+
     query = "SELECT * FROM 'gitlog'"
     with duckdb.connect(db) as con:
         df = con.sql(query).df()
