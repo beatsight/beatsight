@@ -13,6 +13,8 @@ import os
 import re
 from pathlib import Path
 
+from django.templatetags.static import static
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -182,6 +184,27 @@ ALLOWED_HOSTS = [
 BEATSIGHT_DATA_DIR = '/beatsight-data'
 TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
 REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'repos')
+
+UNFOLD = {
+    "SITE_TITLE": 'BeatSight 管理后台',
+    "SITE_HEADER": 'BeatSight 管理后台',
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/png",
+            "href": lambda request: static("assets/img/favicon.ico"),
+        },
+    ],
+    "SITE_LOGO": {
+        "light": lambda request: static("assets/img/logo.jpg"),  # light mode
+        "dark": lambda request: static("assets/img/logo-dark.jpg"),  # dark mode
+    },
+    "SIDEBAR": {
+        "show_search": True,  # Search in applications and models names
+        "show_all_applications": True,  # Dropdown with all applications and models
+    },
+}
 
 LOGNAME = 'beatsight'
 LOGGING = {

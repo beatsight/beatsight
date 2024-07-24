@@ -32,9 +32,6 @@ from . import views
 def home(request):
     return redirect(settings.LOGIN_REDIRECT_URL)
 
-admin.site.site_title = 'BeatSight 管理后台'
-admin.site.site_header = 'BeatSight 管理'
-
 urlpatterns = [
     path('', home),
 
