@@ -5,6 +5,7 @@ celery==5.4.0
 django-celery-beat==2.6.0
 redis==5.0.6
 django-unfold==0.31.0
+openpyxl==3.1.5
 
 gunicorn
 supervisor

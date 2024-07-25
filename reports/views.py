@@ -4,6 +4,7 @@ import pytz
 from django.conf import settings
 from django.shortcuts import render
 from django.utils.timezone import make_aware
+from django.http import HttpResponse
 from rest_framework.decorators import api_view
 import pandas as pd
 
@@ -27,19 +28,22 @@ def projects(request):
         except Project.DoesNotExist:
             return client_error(f"{name} 不存在")
 
+    qs = ProjectActiviy.objects.filter(project__in=projs)
+
     start_date = request.GET.get('startDate')
     end_date = request.GET.get('endDate')
+    if start_date and end_date:
+        native_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        native_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
 
-    native_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-    native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-    native_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-    native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
-    start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
-    end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
 
-    qs = ProjectActiviy.objects.filter(
-        project__in=projs, author_datetime__gt=start_date, author_datetime__lt=end_date
-    ).order_by('author_datetime')
+    qs = qs.order_by('author_datetime')
+
     data = []
     author_names = {}
     for e in qs:
@@ -52,7 +56,6 @@ def projects(request):
             'insertions': e.insertions,
             'deletions': e.deletions,
         })
-
 
     ret = []
     if not data:
@@ -150,3 +153,89 @@ def projects(request):
         })
 
     return ok(ret)
+
+@api_view(['GET'])
+def export_projects(request):
+    names = request.GET.get('names', '')
+    if not names:
+        return client_error('names 不能为空')
+
+    combined = request.GET.get('combined', '1') == '1'
+
+    projs = []
+    names = sorted([name.strip() for name in names.split(',')])
+    for name in names:
+        try:
+            projs.append(Project.objects.get(name=name))
+        except Project.DoesNotExist:
+            return client_error(f"{name} 不存在")
+
+    qs = ProjectActiviy.objects.filter(project__in=projs)
+
+    start_date = request.GET.get('startDate', '')
+    end_date = request.GET.get('endDate', '')
+    if start_date and end_date:
+        native_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        native_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+
+        qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
+
+    qs = qs.order_by('author_datetime')
+
+    data = []
+    author_names = {}
+    for e in qs:
+        author_names[e.author_email] = e.author_name
+        data.append({
+            'project': e.project.name,
+            'commit_sha': e.commit_sha,
+            'author_email': e.author_email,
+            'author_datetime': e.author_datetime,
+            'insertions': e.insertions,
+            'deletions': e.deletions,
+        })
+
+    df = pd.DataFrame(data)
+    df['modifications'] = df['insertions'] + df['deletions']
+
+    if not combined:
+        grouped_df = df.groupby('project')
+
+        proj_dfs = {}
+        for project, group in grouped_df:
+            proj_df = (
+                group
+                .groupby('author_email')
+                .agg(
+                    commit_sha_count=('commit_sha', 'count'),
+                    insertions_sum=('insertions', 'sum'),
+                    deletions_sum=('deletions', 'sum'),
+                    modifications_sum=('modifications', 'sum')
+                )
+                .reset_index()
+                .sort_values(by='commit_sha_count', ascending=False)
+            )
+            proj_dfs[project] = proj_df
+
+        # Create the Excel file in memory
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=project_report.xlsx'
+
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            summary_df = pd.DataFrame({
+                'projects': [';'.join(names)],
+                'start date': [request.GET.get('startDate', '')],
+                'end date': [request.GET.get('endDate', '')],
+            })
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+
+            for proj, df in proj_dfs.items():
+                df.to_excel(writer, sheet_name=proj, index=False)
+
+        return response
+    else:
+        assert False
