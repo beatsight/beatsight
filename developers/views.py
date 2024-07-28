@@ -15,6 +15,7 @@ from projects.models import SimpleSerializer as ProjectSimpleSerializer
 from projects.models import ProjectActiviy, ProjectActiviySerializer
 from beatsight.pagination import CustomPagination
 from beatsight.utils.response import ok
+from beatsight.consts import ACTIVE
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
 
@@ -26,6 +27,28 @@ def index(request):
         res.append(SimpleSerializer(e).data)
 
     return JsonResponse(res, safe=False)
+
+class ListCreate(generics.ListCreateAPIView):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    queryset = Developer.objects.all()
+    serializer_class = SimpleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        res = []
+        query_fields = request.GET.get('fields', '')
+
+        if query_fields:
+            fields = [e.strip() for e in query_fields.split(',')]
+            qs = self.get_queryset().values(*fields)
+            return ok(list(qs))
+
+        for dev in self.get_queryset().filter(status=ACTIVE).order_by('rank_percentile'):
+            res.append(SimpleSerializer(dev).data)
+        return ok(res)
+
 
 def detail(request, email):
     """get detail of a developer (recent activity, top projects ...)"""
