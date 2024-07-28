@@ -256,7 +256,7 @@ def developers(request):
         try:
             devs.append(Developer.objects.get(email=email))
         except Developer.DoesNotExist:
-            return client_error(f"{name} 不存在")
+            return client_error(f"{email} 不存在")
 
     qs = ProjectActiviy.objects.filter(author_email__in=emails)
 
@@ -289,7 +289,13 @@ def developers(request):
 
     ret = []
     if not data:
-        assert False
+        for email in emails:
+            ret.append({
+                'author': email,
+                'commits': [],
+                'loc': [],
+            })
+        return ok(ret)
 
     df = pd.DataFrame(data)
     df['modifications'] = df['insertions'] + df['deletions']
@@ -339,6 +345,13 @@ def developers(request):
 
     result = get_result_df(group_by)
 
+    author_data = {}
+    for email in emails:
+        author_data[email] = {
+            'commits': [],
+            'loc': [],
+        }
+
     ret = []
     for author_email, author_group in result.groupby('author_email'):
         commits = []
@@ -348,10 +361,15 @@ def developers(request):
             loc.append({'date': row['date'],
                         'insertions': row['insertions'], 'deletions': row['deletions'],
                         'modifications': row['modifications']})
-        ret.append({
-            'author': author_email,
+        author_data[author_email] = {
             'commits': commits,
             'loc': loc
+        }
+    for author_email, dic in author_data.items():
+        ret.append({
+            'author': author_email,
+            'commits': dic['commits'],
+            'loc': dic['loc'],
         })
 
     return ok(ret)

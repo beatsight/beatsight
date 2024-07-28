@@ -11,6 +11,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
 
+from beatsight.pagination import CustomPagination
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 from projects.models import ProjectActiviy, ProjectActiviySerializer
 from beatsight.pagination import CustomPagination
@@ -35,19 +36,16 @@ class ListCreate(generics.ListCreateAPIView):
     queryset = Developer.objects.all()
     serializer_class = SimpleSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
 
-    def list(self, request):
-        res = []
-        query_fields = request.GET.get('fields', '')
+    def get_queryset(self):
+        qs = super().get_queryset()
 
-        if query_fields:
-            fields = [e.strip() for e in query_fields.split(',')]
-            qs = self.get_queryset().values(*fields)
-            return ok(list(qs))
+        Q = self.request.GET.get('query', '')
+        if Q:
+            qs = super().get_queryset().filter(email__contains=Q)
 
-        for dev in self.get_queryset().filter(status=ACTIVE).order_by('rank_percentile'):
-            res.append(SimpleSerializer(dev).data)
-        return ok(res)
+        return qs.order_by('email')
 
 
 def detail(request, email):
