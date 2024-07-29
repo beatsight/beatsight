@@ -2,6 +2,7 @@ from collections import defaultdict
 import datetime
 
 import pytz
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
@@ -41,9 +42,12 @@ class ListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         qs = super().get_queryset()
 
-        Q = self.request.GET.get('query', '')
-        if Q:
-            qs = super().get_queryset().filter(email__contains=Q)
+        query = self.request.GET.get('query', '')
+        if query:               # TODO: performance issue!
+            qs = super().get_queryset().filter(
+                Q(email__contains=query) |
+                Q(name__contains=query)
+            )
 
         return qs.order_by('email')
 
