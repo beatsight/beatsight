@@ -373,3 +373,128 @@ def developers(request):
         })
 
     return ok(ret)
+
+@api_view(['GET'])
+def export_developers(request):
+    emails = request.GET.get('emails', '')
+    if not emails:
+        return client_error('emails 不能为空')
+
+    combined = request.GET.get('combined', '1') == '1'
+
+    devs = []
+    emails = sorted([name.strip() for name in emails.split(',')])
+    for email in emails:
+        try:
+            devs.append(Developer.objects.get(email=email))
+        except Developer.DoesNotExist:
+            return client_error(f"{email} 不存在")
+
+    qs = ProjectActiviy.objects.filter(author_email__in=emails)
+
+    start_date = request.GET.get('startDate')
+    end_date = request.GET.get('endDate')
+    if start_date and end_date:
+        native_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        native_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+
+        qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
+
+    qs = qs.order_by('author_datetime')
+
+    data = []
+    author_names = {}
+    for e in qs:
+        author_names[e.author_email] = e.author_name
+        data.append({
+            'project': e.project.name,
+            'commit_sha': e.commit_sha,
+            'author_email': e.author_email,
+            'author_datetime': localtime(e.author_datetime),
+            'insertions': e.insertions,
+            'deletions': e.deletions,
+        })
+
+    ret = []
+    if not data:
+        assert False
+
+    df = pd.DataFrame(data)
+    df['modifications'] = df['insertions'] + df['deletions']
+    df['author_datetime'] = pd.to_datetime(df['author_datetime'])
+
+    delta_days = (df['author_datetime'].max() - df['author_datetime'].min()).days
+    if delta_days <= 45:
+        group_by = 'day'
+    elif delta_days <= 350:
+        group_by = 'week'
+    else:
+        group_by = 'month'
+
+    def get_result_df(group_by):
+        if group_by == 'day':
+            df['date'] = df['author_datetime'].dt.date
+            freq = 'D'
+        elif group_by == 'week':
+            df['date'] = df['author_datetime'].dt.to_period('W').dt.start_time
+            freq = 'W-MON'
+        else:
+            df['date'] = df['author_datetime'].dt.to_period('M').dt.start_time
+            freq = 'MS'
+
+        result = (
+            df.groupby(['author_email', 'date'])
+            .agg({
+                'commit_sha': 'count',
+                'insertions': 'sum',
+                'deletions': 'sum',
+                'modifications': 'sum'
+            })
+            .reset_index()
+            .rename(columns={
+                'commit_sha': 'commit_count',
+                'insertions': 'insertions',
+                'deletions': 'deletions',
+                'modifications': 'modifications'
+            })
+        )
+
+        all_dates = pd.date_range(df['date'].min(), df['date'].max(), freq=freq).date
+        all_combinations = pd.MultiIndex.from_product([result['author_email'].unique(), all_dates], names=['author_email', 'date'])
+        # Reindex the DataFrame to include missing rows
+        result = result.set_index(['author_email', 'date']).reindex(all_combinations, fill_value=0).reset_index()
+        return result
+
+    result = get_result_df(group_by)
+
+    author_dfs = {}
+    for email in emails:
+        author_dfs[email] = pd.DataFrame()
+
+    for author_email, author_group in result.groupby('author_email'):
+        author_dfs[author_email] = author_group
+
+    # Create the Excel file in memory
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=developer_report.xlsx'
+
+    with pd.ExcelWriter(response, engine='openpyxl') as writer:
+        summary_df = pd.DataFrame({
+            'authors': [';'.join(emails)],
+            'start date': [request.GET.get('startDate', '')],
+            'end date': [request.GET.get('endDate', '')],
+        })
+        summary_df.to_excel(writer, sheet_name='Summary', index=False)
+
+        for author, df in author_dfs.items():
+            df.to_excel(writer, sheet_name=author, index=False)
+
+    return response
+    
+        
+
+
