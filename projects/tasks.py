@@ -36,7 +36,7 @@ def init_repo_task(proj_id, repo_url, name, repo_branch):
         proj.last_sync_at = timezone.now()
         proj.save()
 
-        stat_repo_task.delay(proj_id)
+        stat_repo_task.delay(proj_id, True)
     except Exception as e:
         proj.sync_status = CONN_ERROR
         proj.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
@@ -51,20 +51,21 @@ def switch_repo_branch_task(proj_id, repo_branch):
 
     logger.debug(f'switch repo branch to {repo_branch} - {proj.repo_path}')
 
-    try:
-        switch_repo_branch(proj.repo_path, repo_branch)
-        proj.sync_status = CONN_SUCCESS
-        proj.save()
-
-        stat_repo_task.delay(proj_id)
-    except Exception as e:
-        logger.error(e)
+    err_msg, res = switch_repo_branch(proj.repo_path, repo_branch)
+    if err_msg:
         proj.sync_status = CONN_ERROR
         proj.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
         proj.save()
+        return
+
+    if res is True
+        proj.sync_status = CONN_SUCCESS
+        proj.sync_log = ''
+        proj.save()
+        stat_repo_task.delay(proj_id, True)
 
 @shared_task()
-def stat_repo_task(proj_id):
+def stat_repo_task(proj_id, force=False):
     logger.debug(f'stat_repo_task {proj_id}')
 
     lock = f'stat_repo_task_#{proj_id}'
@@ -80,15 +81,16 @@ def stat_repo_task(proj_id):
         return
 
     try:
-        get_a_project_stat(proj, force=False)
+        get_a_project_stat(proj, force=True)
         proj.sync_status = STAT_SUCCESS
+        proj.sync_log = ''
         proj.save()
         logging.info(f'finish stat_repo_task {proj_id}')
     except Exception as e:
         proj.sync_status = STAT_ERROR
         proj.sync_log = f'统计失败，错误日志：{e}'
         proj.save()
-        logger.error(f'error in stat_repo_task {proj_id}')
+        logger.error(f'error in stat_repo_task project: {proj.name}-{proj_id}')
         logger.exception(e)
     finally:
         unlock_task(lock)

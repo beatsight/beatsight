@@ -89,15 +89,18 @@ def switch_repo_branch(repo_path, branch):
     old_cwd = os.getcwd()
     os.chdir(repo_path)
 
+    err = ''
+    res = True
     try:
         subprocess.run(["git", "fetch", "origin", f"{branch}:{branch}"], check=True)
         subprocess.run(["git", "checkout", branch], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error change branch to '{branch}")
-        print(e)
-        raise BranchDoesNotExist
+        err = f"Error change branch to '{branch}: {e}"
+        res = False
+        logger.exception(err)
     finally:
         os.chdir(old_cwd)
+    return err, res
 
 def pull_repo_updates(repo_path, branch):
     os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"

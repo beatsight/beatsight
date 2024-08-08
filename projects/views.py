@@ -29,7 +29,7 @@ from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDo
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
 from .models import Project, SimpleSerializer, DetailSerializer, ProjectActiviy, ProjectActiviySerializer
-from .tasks import init_repo_task, stat_repo_task, switch_repo_branch_task
+from .tasks import init_repo_task, switch_repo_branch_task
 
 logger = logging.getLogger(settings.LOGNAME)
 
