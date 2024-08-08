@@ -38,7 +38,6 @@ def init_repo_task(proj_id, repo_url, name, repo_branch):
 
         stat_repo_task.delay(proj_id)
     except Exception as e:
-        print(e)
         proj.sync_status = CONN_ERROR
         proj.save()
 
@@ -109,11 +108,14 @@ def update_repo_task():
             res = pull_repo_updates(p.repo_path, p.repo_branch)
         except Exception as e:
             logger.exception(e)
+            p.sync_status = CONN_ERROR
+            p.save()
             continue
 
         if res is True:
             logger.info(f'{p.id} - {p.name} has new updates, start stat task')
             p.last_sync_at = timezone.now()
+            p.sync_status = STATING
             p.save()
             stat_repo_task.delay(p.id)
 
