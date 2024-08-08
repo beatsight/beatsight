@@ -106,6 +106,7 @@ def pull_repo_updates(repo_path, branch):
     old_cwd = os.getcwd()
     os.chdir(repo_path)
 
+    err = ''
     has_updates = False
     try:
         # Execute the 'git pull' command
@@ -124,14 +125,15 @@ def pull_repo_updates(repo_path, branch):
                         has_updates = True
                         break
         else:
-            logger.error("Error checking for updates:", result.stderr.strip())
+            err = f"Error checking for updates: {result.stderr.strip()}"
+            logger.error(err)
     except subprocess.CalledProcessError as e:
-        logger.exception(f"Error executing git pull: {e}")
-        raise e
+        err = f"Error executing git pull: {e}"
+        logger.exception(err)
     finally:
         os.chdir(old_cwd)
 
-    return has_updates
+    return err, has_updates
 
 def update_remote_url(repo_path, repo_url):
 

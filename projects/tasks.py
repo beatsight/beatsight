@@ -107,12 +107,10 @@ def update_repo_task():
         return
 
     for p in Project.objects.filter(sync_status=STAT_SUCCESS):
-        try:
-            res = pull_repo_updates(p.repo_path, p.repo_branch)
-        except Exception as e:
-            logger.exception(e)
+        err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
+        if err_msg:
             p.sync_status = CONN_ERROR
-            p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
+            p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
             p.save()
             continue
 
