@@ -39,6 +39,7 @@ def init_repo_task(proj_id, repo_url, name, repo_branch):
         stat_repo_task.delay(proj_id)
     except Exception as e:
         proj.sync_status = CONN_ERROR
+        proj.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
         proj.save()
 
 @shared_task()
@@ -59,6 +60,7 @@ def switch_repo_branch_task(proj_id, repo_branch):
     except Exception as e:
         logger.error(e)
         proj.sync_status = CONN_ERROR
+        proj.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
         proj.save()
 
 @shared_task()
@@ -84,6 +86,7 @@ def stat_repo_task(proj_id):
         logging.info(f'finish stat_repo_task {proj_id}')
     except Exception as e:
         proj.sync_status = STAT_ERROR
+        proj.sync_log = f'统计失败，错误日志：{e}'
         proj.save()
         logger.error(f'error in stat_repo_task {proj_id}')
         logger.exception(e)
@@ -109,6 +112,7 @@ def update_repo_task():
         except Exception as e:
             logger.exception(e)
             p.sync_status = CONN_ERROR
+            p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
             p.save()
             continue
 
