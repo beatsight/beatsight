@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         )
 
         task = 'projects.tasks.update_repo_task'
-        if PeriodicTask.objects.get(task=task):
+        if PeriodicTask.objects.filter(task=task).count() > 0:
             print(f'task {task} already installed')
         else:
             PeriodicTask.objects.create(
@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
         )
 
         task = 'projects.tasks.clean_orphan_developers'
-        if PeriodicTask.objects.get(task=task):
+        if PeriodicTask.objects.filter(task=task).count() > 0:
             print(f'task {task} already installed')
         else:
             PeriodicTask.objects.create(

@@ -17,8 +17,7 @@ class Migration(migrations.Migration):
         DJANGO_SU_EMAIL = os.environ.get('DJANGO_SU_EMAIL', 'foo@foo.com')
         DJANGO_SU_PASSWORD = os.environ.get('DJANGO_SU_PASSWORD', 'foo')
 
-        user = User.objects.get(username=DJANGO_SU_NAME)
-        if user:
+        if User.objects.filter(username=DJANGO_SU_NAME).count() > 0:
             print(f'user {DJANGO_SU_NAME} already created')
             return
 
