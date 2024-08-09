@@ -1,3 +1,4 @@
+import os
 import time
 import logging
 
@@ -6,11 +7,13 @@ from django.utils import timezone
 from celery import shared_task
 
 from projects.models import Project
+from developers.models import Developer
 from beatsight.consts import CONN_SUCCESS, CONN_ERROR, STATING, STAT_SUCCESS, STAT_ERROR
 from beatsight.utils.task_lock import lock_task, unlock_task
 from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch, pull_repo_updates
 from beatsight import celery_app
-from stats.views import get_a_project_stat
+from stats.views import get_a_project_stat, calculate_authors_data
+from stats.utils import delete_dataframes_from_duckdb
 
 logger = logging.getLogger('tasks')
 
@@ -58,7 +61,7 @@ def switch_repo_branch_task(proj_id, repo_branch):
         proj.save()
         return
 
-    if res is True
+    if res is True:
         proj.sync_status = CONN_SUCCESS
         proj.sync_log = ''
         proj.save()
@@ -66,7 +69,7 @@ def switch_repo_branch_task(proj_id, repo_branch):
 
 @shared_task()
 def stat_repo_task(proj_id, force=False):
-    logger.debug(f'stat_repo_task {proj_id}')
+    logger.debug(f'start stat_repo_task {proj_id}')
 
     lock = f'stat_repo_task_#{proj_id}'
     if not lock_task(lock):
@@ -94,6 +97,26 @@ def stat_repo_task(proj_id, force=False):
         logger.exception(e)
     finally:
         unlock_task(lock)
+
+@shared_task()
+def cleanup_after_repo_remove_task(proj_name, author_emails):
+    logger.debug(f'start cleanup_after_repo_remove_task {proj_name}')
+
+    # TODO: lock daily_commits_db
+    daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
+    delete_dataframes_from_duckdb("author_daily_commits", f"project='{proj_name}'",
+                                  db=daily_commits_db)
+    print('calculate_authors_data', author_emails)
+    calculate_authors_data(author_emails, daily_commits_db)
+
+    for dev in Developer.objects.filter(email__in=author_emails):
+        dev.remove_a_project()
+        if dev.total_projects <= 0:
+            dev.delete()
+            logger.debug(f'delete orphan developer {dev.email}')
+
+    logger.debug(f'finish cleanup_after_repo_remove_task {proj_name}')
+
 
 # from django_celery_beat.decorators import periodic_task
 # @periodic_task(run_every=timedelta(seconds=30), name='update_repo_task')
@@ -125,3 +148,16 @@ def update_repo_task():
 
     logger.debug('end update_repo_task')
     unlock_task(lock)
+
+@shared_task()
+def clean_orphan_developers():
+    logger.debug('start clean_orphan_developers...')
+
+    for dev in Developer.objects.all():
+        if dev.projects.count() == 0:
+            dev.delete()
+            logger.debug(f'delete orphan developer {dev.email}')
+
+    logger.debug('end clean_orphan_developers')
+
+    

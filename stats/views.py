@@ -240,47 +240,8 @@ def get_a_project_stat(p: Project, force=False):
     save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append", db=daily_commits_db)
 
     # calculate authors' activities, most used languages, contributions
-    for email in daily_stats['author_email'].unique().tolist():
-        try:
-            dev = Developer.objects.get(email=email)
-        except Developer.DoesNotExist:
-            # raise warning
-            continue
-
-        populate_general_data(dev, db=daily_commits_db)
-
-        try:
-            dev_ac = DeveloperActivity.objects.get(developer=dev)
-        except DeveloperActivity.DoesNotExist:
-            dev_ac = DeveloperActivity(developer=dev)
-
-        dev_ac.daily_activity = get_author_daily_commit_count(email, db=daily_commits_db)
-        dev_ac.weekly_activity = get_author_weekly_commit_count(email, db=daily_commits_db)
-        dev_ac.save()
-
-        for lang, cnt in get_most_used_langs(email, db=daily_commits_db):
-            try:
-                lang_obj = Language.objects.get(name=lang)
-            except Language.DoesNotExist:
-                lang_obj = Language(name=lang)
-                lang_obj.save()
-
-            try:
-                dev_lang = DeveloperLanguage.objects.get(developer=dev, language=lang_obj)
-            except DeveloperLanguage.DoesNotExist:
-                dev_lang = DeveloperLanguage(developer=dev, language=lang_obj)
-            dev_lang.use_count = cnt
-            dev_lang.save()
-
-        try:
-            dev_contrib = DeveloperContribution.objects.get(developer=dev, project=p)
-        except DeveloperContribution.DoesNotExist:
-            dev_contrib = DeveloperContribution(developer=dev, project=p)
-        dev_contrib.daily_contribution = get_author_daily_contributions(
-            email, p, db=daily_commits_db
-        )
-        dev_contrib.commits_count = sum(e['daily_commit_count'] for e in dev_contrib.daily_contribution)
-        dev_contrib.save()
+    emails  = daily_stats['author_email'].unique().tolist()
+    calculate_authors_data(emails, daily_commits_db, p)
 
 def create_author_daily_commits_table(db):
     with duckdb.connect(db) as con:
@@ -392,6 +353,50 @@ def gen_whole_history_df(p, db, replace=False):
         return df
 
 ## user related
+def calculate_authors_data(emails, daily_commits_db, proj=None):
+    for email in emails:
+        try:
+            dev = Developer.objects.get(email=email)
+        except Developer.DoesNotExist:
+            # raise warning
+            continue
+
+        populate_general_data(dev, db=daily_commits_db)
+
+        try:
+            dev_ac = DeveloperActivity.objects.get(developer=dev)
+        except DeveloperActivity.DoesNotExist:
+            dev_ac = DeveloperActivity(developer=dev)
+
+        dev_ac.daily_activity = get_author_daily_commit_count(email, db=daily_commits_db)
+        dev_ac.weekly_activity = get_author_weekly_commit_count(email, db=daily_commits_db)
+        dev_ac.save()
+
+        for lang, cnt in get_most_used_langs(email, db=daily_commits_db):
+            try:
+                lang_obj = Language.objects.get(name=lang)
+            except Language.DoesNotExist:
+                lang_obj = Language(name=lang)
+                lang_obj.save()
+
+            try:
+                dev_lang = DeveloperLanguage.objects.get(developer=dev, language=lang_obj)
+            except DeveloperLanguage.DoesNotExist:
+                dev_lang = DeveloperLanguage(developer=dev, language=lang_obj)
+            dev_lang.use_count = cnt
+            dev_lang.save()
+
+        if proj is not None:
+            try:
+                dev_contrib = DeveloperContribution.objects.get(developer=dev, project=proj)
+            except DeveloperContribution.DoesNotExist:
+                dev_contrib = DeveloperContribution(developer=dev, project=proj)
+            dev_contrib.daily_contribution = get_author_daily_contributions(
+                email, proj, db=daily_commits_db
+            )
+            dev_contrib.commits_count = sum(e['daily_commit_count'] for e in dev_contrib.daily_contribution)
+            dev_contrib.save()
+
 def populate_general_data(dev, db):
     sql = f"""
 SELECT
@@ -407,10 +412,10 @@ WHERE
     author_email = '{dev.email}';
     """
     for e in fetch_from_duckdb(sql, db=db):
-        dev.total_commits = e[2]
-        dev.total_insertions = e[3]
-        dev.total_deletions = e[4]
-        dev.active_days = e[5]
+        dev.total_commits = e[2] or 0
+        dev.total_insertions = e[3] or 0
+        dev.total_deletions = e[4] or 0
+        dev.active_days = e[5] or 0
         dev.save()
     dev.calculate_rank()
 

@@ -29,7 +29,7 @@ from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDo
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
 from .models import Project, SimpleSerializer, DetailSerializer, ProjectActiviy, ProjectActiviySerializer
-from .tasks import init_repo_task, switch_repo_branch_task
+from .tasks import init_repo_task, switch_repo_branch_task, cleanup_after_repo_remove_task
 
 logger = logging.getLogger(settings.LOGNAME)
 
@@ -176,7 +176,15 @@ class Detail(GenericViewSet):
 
     def destroy(self, request, *args, **kwargs):
         p = self.get_object()
+
+        proj_name = p.name
+        author_emails = [dev.email for dev in p.developer_set.all()]
+
         p.delete()
+
+        # re-calculate authors' activities, most used languages, contributions ... in that project
+        cleanup_after_repo_remove_task.delay(proj_name, author_emails)
+
         return Response({})
 
     @action(detail=True, methods=['get'])

@@ -76,6 +76,10 @@ class Developer(TimestampedModel):
         self.total_projects = len(self.projects.all())
         self.save()
 
+    def remove_a_project(self):
+        self.total_projects = len(self.projects.all())
+        self.save()
+        
     def calculate_rank(self):
         level, percentile = calculate_rank(self.total_commits, self.total_projects,
                                            self.active_days_ratio,
