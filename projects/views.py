@@ -269,7 +269,7 @@ class Detail(GenericViewSet):
             native_end_dt = datetime.datetime(year, 12, 31, hour=23, minute=59, second=59, microsecond=999999)
             start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
             end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
-     
+
         if start_date and end_date:
             qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
      
@@ -293,6 +293,25 @@ class Detail(GenericViewSet):
         
 
 class ActivityList(generics.ListAPIView):
-    queryset = ProjectActiviy.objects.all().order_by('-author_datetime')
+    queryset = ProjectActiviy.objects.all()
     serializer_class = ProjectActiviySerializer
     # pagination_class = PageNumberPagination
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        start_date_str = self.request.GET.get('startDate')
+        end_date_str = self.request.GET.get('endDate')
+        if start_date_str and end_date_str:
+            native_dt = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+            native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            native_dt = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
+            native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+            end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+            qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
+
+        qs = qs.order_by('-author_datetime')
+
+        return qs
