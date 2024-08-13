@@ -63,7 +63,6 @@ class ListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
-        res = []
         query_fields = request.GET.get('fields', '')
 
         if query_fields:
@@ -71,17 +70,22 @@ class ListCreate(generics.ListCreateAPIView):
             qs = self.get_queryset().values(*fields)
             return ok(list(qs))
 
-        for p in self.get_queryset():
-            try:
-                ac = ActivityData.objects.get(project=p)
-            except ActivityData.DoesNotExist:
-                ac = None
-            recent_weekly_activity = ac.recent_weekly_activity if ac else None
+        pnp = CustomPagination()
+        page = pnp.paginate_queryset(self.get_queryset(), request)
+
+        res = []
+        for p in page:
+            # try:
+            #     ac = ActivityData.objects.get(project=p)
+            # except ActivityData.DoesNotExist:
+            #     ac = None
+            # recent_weekly_activity = ac.recent_weekly_activity if ac else None
             ss = SimpleSerializer(
-                p, recent_weekly_activity=recent_weekly_activity
+                p, recent_weekly_activity=None
             )
             res.append(ss.data)
-        return ok(res)
+
+        return pnp.get_paginated_response(res)
 
     def create(self, request):
         req_data = request.data
