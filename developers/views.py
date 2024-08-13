@@ -4,7 +4,7 @@ import datetime
 import pytz
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from django.conf import settings
@@ -51,10 +51,17 @@ class ListCreate(generics.ListCreateAPIView):
 
         return qs.order_by('email')
 
+def get_obj(email):
+    try:
+        d = Developer.objects.get(email=email)
+    except Developer.DoesNotExist:
+        raise Http404(f"开发人员（{email}）不存在")
+    return d
 
+@api_view(['GET'])
 def detail(request, email):
     """get detail of a developer (recent activity, top projects ...)"""
-    d = get_object_or_404(Developer, email=email)
+    d = get_obj(email)
 
     res = DetailSerializer(d).data
 
@@ -63,11 +70,11 @@ def detail(request, email):
     for e in res['contribution']:
         e['percentage'] = round(e['commits_count'] / commits_total * 100, 1)
 
-    return JsonResponse(res, safe=False)
+    return ok(res)
 
 def contributions(request, email):
     """get projects' contribution distribution of a developer"""
-    d = get_object_or_404(Developer, email=email)
+    d = get_obj(email)
 
     res = []
     for e in DeveloperContribution.objects.filter(developer=d):
@@ -78,6 +85,8 @@ def contributions(request, email):
 
 @api_view(['GET'])
 def activities(request, email):
+    d = get_obj(email)
+
     qs = ProjectActiviy.objects.filter(author_email=email).order_by(
         '-author_datetime'
     )
@@ -122,6 +131,8 @@ def activities(request, email):
 
 @api_view(['GET'])
 def contrib_calendar(request, email):
+    d = get_obj(email)
+
     year = request.GET.get('year')
     if not year:
         end_date = timezone.now().date()

@@ -10,10 +10,9 @@ from .forms import LoginForm, UserPasswordResetForm
 def custom_exception_handler(exc, context):
     # Call the default exception handler first to get the standard error response.
     response = exception_handler(exc, context)
-    print(type(exc))
     # Now add the custom error response.
     if isinstance(exc, Http404) or isinstance(exc, NotFound):
-        custom_response = {'status': 'failed', 'data': None, 'error': 'Resource not found', 'error_code': '404_not_found' }
+        custom_response = {'status': 'failed', 'data': None, 'error': str(exc), 'error_code': '404_not_found' }
     elif isinstance(exc, NotAuthenticated):
         custom_response = {'status': 'failed', 'data': None, 'error': exc.default_detail, 'error_code': 'not_authenticated'}
     elif isinstance(exc, PermissionDenied):

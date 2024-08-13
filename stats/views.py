@@ -267,7 +267,10 @@ def gen_whole_history_df(p, db, replace=False):
     repo = pygit2.Repository(p.repo_path)
 
     if replace:
-        os.remove(db)
+        try:
+            os.remove(db)
+        except FileNotFoundError:
+            ...
 
     with duckdb.connect(db) as con:
         table_exists = con.execute(

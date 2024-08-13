@@ -118,7 +118,7 @@ class Detail(GenericViewSet):
         try:
             obj = Project.objects.get(name=self.kwargs['name'])
         except Project.DoesNotExist:
-            raise Http404
+            raise Http404(f"项目（{self.kwargs['name']}）不存在")
         return obj
 
     def retrieve(self, request, *args, **kwargs):
