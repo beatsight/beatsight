@@ -15,20 +15,18 @@ from rest_framework.decorators import api_view
 from beatsight.pagination import CustomPagination
 from projects.models import SimpleSerializer as ProjectSimpleSerializer
 from projects.models import ProjectActiviy, ProjectActiviySerializer
-from beatsight.pagination import CustomPagination
 from beatsight.utils.response import ok
 from beatsight.consts import ACTIVE
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
 
 
-def index(request):
-    """list all developers"""
-    res = []
-    for e in Developer.objects.all().order_by('rank_percentile')[:100]:
-        res.append(SimpleSerializer(e).data)
-
-    return JsonResponse(res, safe=False)
+# def index(request):
+#     """list all developers"""
+#     res = []
+#     for e in Developer.objects.all().order_by('rank_percentile')[:100]:
+#         res.append(SimpleSerializer(e).data)
+#     return JsonResponse(res, safe=False)
 
 class ListCreate(generics.ListCreateAPIView):
     """
@@ -50,6 +48,19 @@ class ListCreate(generics.ListCreateAPIView):
             )
 
         return qs.order_by('email')
+
+    def list(self, request):
+        qs = self.get_queryset()
+
+        pnp = CustomPagination()
+        page = pnp.paginate_queryset(qs, request)
+
+        res = []
+        for e in page:
+            res.append(SimpleSerializer(e).data)
+
+        return pnp.get_paginated_response(res)
+
 
 def get_obj(email):
     try:
