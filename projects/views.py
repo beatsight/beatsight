@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from rest_framework import permissions, viewsets
@@ -70,8 +71,16 @@ class ListCreate(generics.ListCreateAPIView):
             qs = self.get_queryset().values(*fields)
             return ok(list(qs))
 
+        qs = self.get_queryset()
+        query = self.request.GET.get('query', '')
+        if query:               # TODO: performance issue!
+            qs = super().get_queryset().filter(
+                Q(name__contains=query) |
+                Q(repo_url__contains=query)
+            )
+
         pnp = CustomPagination()
-        page = pnp.paginate_queryset(self.get_queryset(), request)
+        page = pnp.paginate_queryset(qs, request)
 
         res = []
         for p in page:
