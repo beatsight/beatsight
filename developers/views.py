@@ -47,7 +47,15 @@ class ListCreate(generics.ListCreateAPIView):
                 Q(name__contains=query)
             )
 
-        return qs.order_by('email')
+        sort_by = self.request.GET.get('sortBy', '')
+        if sort_by:
+            order = self.request.GET.get('order', 'asc')
+            if order == 'desc':
+                qs = qs.order_by(f'-{sort_by}')
+            else:
+                qs = qs.order_by(sort_by)
+
+        return qs
 
     def list(self, request):
         qs = self.get_queryset()

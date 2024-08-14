@@ -63,6 +63,26 @@ class ListCreate(generics.ListCreateAPIView):
     serializer_class = SimpleSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        query = self.request.GET.get('query', '')
+        if query:               # TODO: performance issue!
+            qs = super().get_queryset().filter(
+                Q(name__contains=query) |
+                Q(repo_url__contains=query)
+            )
+
+        sort_by = self.request.GET.get('sortBy', '')
+        if sort_by:
+            order = self.request.GET.get('order', 'asc')
+            if order == 'desc':
+                qs = qs.order_by(f'-{sort_by}')
+            else:
+                qs = qs.order_by(sort_by)
+
+        return qs
+
     def list(self, request):
         query_fields = request.GET.get('fields', '')
 
@@ -72,13 +92,6 @@ class ListCreate(generics.ListCreateAPIView):
             return ok(list(qs))
 
         qs = self.get_queryset()
-        query = self.request.GET.get('query', '')
-        if query:               # TODO: performance issue!
-            qs = super().get_queryset().filter(
-                Q(name__contains=query) |
-                Q(repo_url__contains=query)
-            )
-
         pnp = CustomPagination()
         page = pnp.paginate_queryset(qs, request)
 
