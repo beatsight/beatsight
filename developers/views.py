@@ -183,11 +183,11 @@ def contrib_calendar(request, email):
 
         if cnt == 0:
             level = 0
-        if cnt >= 1 and cnt < 3:
+        if cnt >= 1 and cnt < 2:
             level = 1
-        if cnt >=3 and cnt < 6:
+        if cnt >= 2 and cnt < 3:
             level = 2
-        if cnt >= 6 and cnt < 9:
+        if cnt >= 3 and cnt < 5:
             level = 3
 
         data.append({
