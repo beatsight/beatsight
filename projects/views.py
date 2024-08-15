@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, localtime
 from rest_framework import permissions, viewsets
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
@@ -228,13 +228,17 @@ class Detail(GenericViewSet):
 
         year = request.GET.get('year')
         if not year:
-            end_date = timezone.now().date()
-            start_date = end_date - datetime.timedelta(days=366)
+            # TODO: use util function
+            native_end_dt = datetime.datetime.now()
+            native_start_dt = native_end_dt - datetime.timedelta(days=366)
         else:
-             year = int(year)
-             start_date = datetime.date(year, 1, 1)
-             end_date = datetime.date(year, 12, 31)
-     
+            year = int(year)
+            native_start_dt = datetime.datetime(year, 1, 1, hour=0, minute=0, second=0, microsecond=0)
+            native_end_dt = datetime.datetime(year, 12, 31, hour=23, minute=59, second=59, microsecond=999999)
+
+        start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+        end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+
         res = {}
         current_date = start_date
         while current_date <= end_date:
@@ -247,7 +251,7 @@ class Detail(GenericViewSet):
                 author_datetime__gte=start_date,
                 author_datetime__lt=end_date + datetime.timedelta(days=1)
         ):
-            date_str = e.author_datetime.strftime('%Y-%m-%d')
+            date_str = localtime(e.author_datetime).strftime('%Y-%m-%d')
             res[date_str].append(e.commit_sha)
      
         data = []
@@ -257,11 +261,11 @@ class Detail(GenericViewSet):
      
             if cnt == 0:
                 level = 0
-            if cnt >= 1 and cnt < 5:
+            if cnt >= 1 and cnt < 3:
                 level = 1
-            if cnt >=5 and cnt < 10:
+            if cnt >= 3 and cnt < 5:
                 level = 2
-            if cnt >= 10 and cnt < 15:
+            if cnt >= 5 and cnt < 7:
                 level = 3
      
             data.append({

@@ -3,20 +3,17 @@ import datetime
 
 import pytz
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, Http404
 from django.utils import timezone
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, localtime
 from django.conf import settings
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
 
 from beatsight.pagination import CustomPagination
-from projects.models import SimpleSerializer as ProjectSimpleSerializer
 from projects.models import ProjectActiviy, ProjectActiviySerializer
 from beatsight.utils.response import ok
-from beatsight.consts import ACTIVE
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
 
@@ -114,6 +111,7 @@ def activities(request, email):
     date = request.GET.get('date')
     if date:
         native_dt = datetime.datetime.strptime(date, '%Y-%m-%d')
+        # TODO: use util function
         native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
         start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
@@ -122,6 +120,7 @@ def activities(request, email):
     year = request.GET.get('year')
     if year:
         year = int(year)
+        # TODO: use util function
         native_start_dt = datetime.datetime(year, 1, 1, hour=0, minute=0, second=0, microsecond=0)
         native_end_dt = datetime.datetime(year, 12, 31, hour=23, minute=59, second=59, microsecond=999999)
         start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
@@ -154,12 +153,16 @@ def contrib_calendar(request, email):
 
     year = request.GET.get('year')
     if not year:
-        end_date = timezone.now().date()
-        start_date = end_date - datetime.timedelta(days=366)
+        # TODO: use util function
+        native_end_dt = datetime.datetime.now()
+        native_start_dt = native_end_dt - datetime.timedelta(days=366)
     else:
-         year = int(year)
-         start_date = datetime.date(year, 1, 1)
-         end_date = datetime.date(year, 12, 31)
+        year = int(year)
+        native_start_dt = datetime.datetime(year, 1, 1, hour=0, minute=0, second=0, microsecond=0)
+        native_end_dt = datetime.datetime(year, 12, 31, hour=23, minute=59, second=59, microsecond=999999)
+
+    start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
+    end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
 
     res = {}
     current_date = start_date
@@ -173,7 +176,7 @@ def contrib_calendar(request, email):
             author_datetime__gte=start_date,
             author_datetime__lt=end_date + datetime.timedelta(days=1)
     ):
-        date_str = e.author_datetime.strftime('%Y-%m-%d')
+        date_str = localtime(e.author_datetime).strftime('%Y-%m-%d')
         res[date_str].append(e.commit_sha)
 
     data = []
