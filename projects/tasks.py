@@ -8,7 +8,7 @@ from celery import shared_task
 
 from projects.models import Project
 from developers.models import Developer
-from beatsight.consts import CONN_SUCCESS, CONN_ERROR, STATING, STAT_SUCCESS, STAT_ERROR
+from beatsight.consts import CONN_SUCCESS, CONN_ERROR, STATING, STAT_SUCCESS, STAT_ERROR, INIT
 from beatsight.utils.task_lock import lock_task, unlock_task
 from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch, pull_repo_updates
 from beatsight import celery_app
@@ -84,7 +84,7 @@ def stat_repo_task(proj_id, force=False):
         return
 
     try:
-        get_a_project_stat(proj, force=True)
+        get_a_project_stat(proj, force=force)
         proj.sync_status = STAT_SUCCESS
         proj.sync_log = ''
         proj.save()
@@ -131,7 +131,7 @@ def update_repo_task():
         logger.warn('update_repo_task is running, skip')
         return
 
-    for p in Project.objects.filter(sync_status=STAT_SUCCESS):
+    for p in Project.objects.exclude(sync_status=INIT):
         err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
         if err_msg:
             p.sync_status = CONN_ERROR
@@ -144,7 +144,7 @@ def update_repo_task():
             p.last_sync_at = timezone.now()
             p.sync_status = STATING
             p.save()
-            stat_repo_task.delay(p.id)
+            stat_repo_task.delay(p.id, False)
 
     logger.debug('end update_repo_task')
     unlock_task(lock)
