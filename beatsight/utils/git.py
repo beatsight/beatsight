@@ -83,6 +83,13 @@ def full_clone_repo_with_branch(repo_url, name, branch_name):
 def switch_repo_branch(repo_path, branch):
     print(f"switch_repo_branch {repo_path} {branch}")
 
+    err, cur_branch = get_current_branch(repo_path)
+    if err:
+        return err, False
+
+    if cur_branch == branch:
+        return '', True
+
     os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
 
     # Change directory to the cloned repository
@@ -102,6 +109,21 @@ def switch_repo_branch(repo_path, branch):
         os.chdir(old_cwd)
     return err, res
 
+def get_current_branch(repo_path):
+    # Change directory to the cloned repository
+    old_cwd = os.getcwd()
+    os.chdir(repo_path)
+    # Get the current Git branch
+    try:
+        current_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+        return '', current_branch
+    except subprocess.CalledProcessError as e:
+        err = "Error: Could not determine the current Git branch."
+        logger.exception(e)
+        return err, ''
+    finally:
+        os.chdir(old_cwd)
+
 def pull_repo_updates(repo_path, branch):
     os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
 
@@ -112,6 +134,9 @@ def pull_repo_updates(repo_path, branch):
     err = ''
     has_updates = False
     try:
+        # logger.debug(os.environ["GIT_SSH_COMMAND"])
+        # logger.debug(os.getcwd())
+
         # Execute the 'git pull' command
         result = subprocess.run(['git', 'pull', 'origin', branch],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
