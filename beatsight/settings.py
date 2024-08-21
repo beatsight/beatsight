@@ -153,7 +153,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'beatsight.pagination.CustomPagination',
     'EXCEPTION_HANDLER': 'beatsight.views.custom_exception_handler',
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 10,
 }
 
 # Celery settings

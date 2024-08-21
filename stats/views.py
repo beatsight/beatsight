@@ -271,6 +271,7 @@ def gen_whole_history_df(p, db, replace=False):
             os.remove(db)
         except FileNotFoundError:
             ...
+        ProjectActiviy.objects.filter(project=p).delete()
 
     with duckdb.connect(db) as con:
         table_exists = con.execute(
@@ -293,6 +294,8 @@ def gen_whole_history_df(p, db, replace=False):
                   author_datetime INTEGER,
                   insertions INTEGER,
                   deletions INTEGER,
+                  corrected_insertions INTEGER,
+                  corrected_deletions INTEGER,
                   details TEXT,
                   file_exts VARCHAR[]
                 )
@@ -322,7 +325,7 @@ def gen_whole_history_df(p, db, replace=False):
         activities = []
         for cid in new_commit_hashes[::-1]:
             commit = repo.get(cid)
-            e = gen_commit_record(repo, commit)
+            e = gen_commit_record(repo, commit, p.get_ignore_list())
             if not e['is_merge_commit']:
                 author_datetime = timestamp_to_dt(e['author_timestamp'], e['author_tz_offset'])
                 activities.append(ProjectActiviy(
@@ -335,6 +338,8 @@ def gen_whole_history_df(p, db, replace=False):
                     details=e['details'],
                     insertions=e['insertions'],
                     deletions=e['deletions'],
+                    corrected_insertions=e['corrected_insertions'],
+                    corrected_deletions=e['corrected_deletions'],
                 ))
 
             del e['commit_msg']

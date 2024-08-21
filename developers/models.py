@@ -186,7 +186,7 @@ class DeveloperContributionSerializer(S.ModelSerializer):
 
     class Meta:
         model = DeveloperContribution
-        fields = ['project_name', 'developer_name', 'developer_email', 'daily_contribution', 'commits_count']
+        fields = ['project_id', 'project_name', 'developer_name', 'developer_email', 'daily_contribution', 'commits_count']
 
 
 class SimpleSerializer(S.ModelSerializer):

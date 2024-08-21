@@ -44,6 +44,7 @@ class Project(TimestampedModel):
     repo_url = models.CharField(max_length=1000)    # github/gitlab url
     repo_branch = models.CharField(max_length=100, default='master')      # master/dev/...
     repo_path = models.CharField(max_length=1000, default='')  # repo local path
+    ignore_list = models.TextField(default='')
 
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
@@ -67,6 +68,9 @@ class Project(TimestampedModel):
     @property
     def head_commit(self):
         return self.last_commit_id
+
+    def get_ignore_list(self):
+        return [e.strip() for e in self.ignore_list.split('\n')]
 
     def save(self, *args, **kwargs):
         if self.last_commit_at and (timezone.now() - self.last_commit_at).days > 90:
@@ -99,11 +103,18 @@ class ProjectActiviy(models.Model):
     details = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     insertions = models.IntegerField(default=0)
     deletions = models.IntegerField(default=0)
+    # 剔除异常改动，修正后的数据
+    corrected_insertions = models.IntegerField(default=0)
+    corrected_deletions = models.IntegerField(default=0)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['project', 'commit_sha'], name='unique_proj_commit')
         ]
+
+
+class ProjectIgnoreList(models.Model):
+    ...
 
 #################### serializers
 class ProjectLanguageSerializer(S.ModelSerializer):
@@ -124,6 +135,7 @@ class ProjectLanguageSerializer(S.ModelSerializer):
         return d['rgb']
 
 class ProjectActiviySerializer(S.ModelSerializer):
+    project_id = S.ReadOnlyField(source='project.id')
     project_name = S.ReadOnlyField(source='project.name')
     details_str = S.SerializerMethodField()
     commit_link = S.SerializerMethodField()
@@ -145,11 +157,21 @@ class ProjectActiviySerializer(S.ModelSerializer):
             elif k == 'D':
                 action = '删除了'
             else:
-                assert False
-            if len(v) == 1:
-                ret.append(f'{action} {v[0]}')
+                assert False, 'invalid key'
+
+            if isinstance(v[0], str):
+                if len(v) == 1:
+                    ret.append(f'{action} {v[0]}')
+                else:
+                    ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
+            elif isinstance(v[0], dict):
+                if len(v) == 1:
+                    ret.append(f"{action} {v[0]['file_path']}")
+                else:
+                    ret.append(f"{action} {v[0]['file_path']} 等 {len(v)} 个文件")
             else:
-                ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
+                assert False, 'invalid value type'
+
         return '；'.join(ret)
 
     def get_commit_link(self, obj):

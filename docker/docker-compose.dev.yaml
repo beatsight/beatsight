@@ -14,15 +14,15 @@ services:
     volumes:
       - repo-data:/beatsight-data
       - ..:/Users/xiez/dev/beatsight
-      - /Users/xiez/src/seahub:/seahub
-      - /Users/xiez/dev/SICP-exercises:/sicp
-      - /Users/xiez/dev/beatsight-web:/beatsight-web
-      - /Users/xiez/dev/coreui-free-react-admin-template:/coreui-free-react-admin-template
-      - ../../../dev/17zuoye/bank:/bank
-      - ../../../dev/17zuoye/ferrum:/ferrum
-      - ../../../dev/17zuoye/gemserver:/gemserver
-      - ../../../dev/17zuoye/question-bank:/question-bank
-      - ../../../dev/17zuoye/aquarius:/aquarius
+      # - /Users/xiez/src/seahub:/seahub
+      # - /Users/xiez/dev/SICP-exercises:/sicp
+      # - /Users/xiez/dev/beatsight-web:/beatsight-web
+      # - /Users/xiez/dev/coreui-free-react-admin-template:/coreui-free-react-admin-template
+      # - ../../../dev/17zuoye/bank:/bank
+      # - ../../../dev/17zuoye/ferrum:/ferrum
+      # - ../../../dev/17zuoye/gemserver:/gemserver
+      # - ../../../dev/17zuoye/question-bank:/question-bank
+      # - ../../../dev/17zuoye/aquarius:/aquarius
     ports:
       - "8081:8081"
     networks:

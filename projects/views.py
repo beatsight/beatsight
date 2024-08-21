@@ -176,23 +176,25 @@ class Detail(GenericViewSet):
         req_data = json.loads(request.body)
         test_conn = True if req_data.get('test_conn', 0) == 1 else False
 
-        ok, ret = clean_project_fields(req_data, test_conn)
-        if not ok:
-            err = ret
-            return client_error(err)
-        if test_conn:
-            return Response({})
+        # ok, ret = clean_project_fields(req_data, test_conn)
+        # if not ok:
+        #     err = ret
+        #     return client_error(err)
+        # if test_conn:
+        #     return Response({})
 
-        data = ret
+        data = req_data
 
-        old_url = p.repo_url
+        # old_url = p.repo_url
         old_branch = p.repo_branch
-        p.name, p.repo_url, p.repo_branch = data['name'], data['repo_url'], data['repo_branch']
+        p.desc = data['desc'].strip()
+        p.repo_branch, p.ignore_list = data['repo_branch'].strip(), data['ignore_list'].strip()
+
         p.save()
         p.refresh_from_db()
 
-        if p.repo_url != old_url:
-            update_remote_url(p.repo_path, p.repo_url)
+        # if p.repo_url != old_url:
+        #     update_remote_url(p.repo_path, p.repo_url)
 
         if p.repo_branch != old_branch:
             switch_repo_branch_task.delay(p.id, p.repo_branch)

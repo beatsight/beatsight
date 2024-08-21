@@ -1,4 +1,6 @@
 import os
+import fnmatch
+
 import pygit2 as git
 
 def get_file_extension(filepath: str):
@@ -31,12 +33,32 @@ def map_signature(mailmap, signature):
             # warnings.warn(f"{str(e)}. Email will be replaced with '{email}'")
     return name, email
 
-def gen_commit_record(repo, commit):
+def is_file_ignored(file_path, ignore_patterns):
+    """
+    Check if a file or directory should be ignored based on the provided ignore patterns.
+
+    Args:
+        file_path (str): The absolute path of the file or directory.
+        ignore_patterns (list): A list of ignore patterns.
+
+    Returns:
+        bool: True if the file or directory should be ignored, False otherwise.
+    """
+    for pattern in ignore_patterns:
+        if pattern.startswith("!"):
+            if fnmatch.fnmatch(file_path, pattern[1:]):
+                return False
+        elif fnmatch.fnmatch(file_path, pattern):
+            return True
+    return False
+
+def gen_commit_record(repo, commit, ignore_patterns=[]):
     mailmap = git.Mailmap.from_repository(repo)
     author_name, author_email = map_signature(mailmap, commit.author)
 
     is_merge_commit = False
     insertions, deletions = 0, 0
+    corrected_insertions, corrected_deletions = 0, 0
     details = {
         'A': [],
         'D': [],
@@ -47,10 +69,29 @@ def gen_commit_record(repo, commit):
         diff = commit.tree.diff_to_tree(swap=True)
         st = diff.stats
         insertions, deletions = st.insertions, st.deletions
+        corrected_insertions, corrected_deletions = st.insertions, st.deletions
 
         for patch in diff:
+            added_lines = 0
+            deleted_lines = 0
+
+            for hunk in patch.hunks:
+                for line in hunk.lines:
+                    if line.origin == '+':
+                        added_lines += 1
+                    elif line.origin == '-':
+                        deleted_lines += 1
+
+            if is_file_ignored(patch.delta.new_file.path, ignore_patterns):
+                corrected_insertions -= added_lines
+                corrected_deletions -= deleted_lines
+
             op = patch.delta.status_char()
-            details[op].append(patch.delta.new_file.path)
+            details[op].append({
+                'file_path': patch.delta.new_file.path,
+                'insertions': added_lines,
+                'deletions': deleted_lines,
+            })
             if patch.delta.new_file.path != patch.delta.old_file.path:
                 print(f'(was {patch.delta.old_file.path})')
                 assert False
@@ -60,10 +101,29 @@ def gen_commit_record(repo, commit):
         diff = repo.diff(parent_commit, commit)
         st = diff.stats
         insertions, deletions = st.insertions, st.deletions
+        corrected_insertions, corrected_deletions = st.insertions, st.deletions
 
         for patch in diff:
+            added_lines = 0
+            deleted_lines = 0
+
+            for hunk in patch.hunks:
+                for line in hunk.lines:
+                    if line.origin == '+':
+                        added_lines += 1
+                    elif line.origin == '-':
+                        deleted_lines += 1
+
+            if is_file_ignored(patch.delta.new_file.path, ignore_patterns):
+                corrected_insertions -= added_lines
+                corrected_deletions -= deleted_lines
+
             op = patch.delta.status_char()
-            details[op].append(patch.delta.new_file.path)
+            details[op].append({
+                'file_path': patch.delta.new_file.path,
+                'insertions': added_lines,
+                'deletions': deleted_lines,
+            })
             if patch.delta.new_file.path != patch.delta.old_file.path:
                 print(f'(was {patch.delta.old_file.path})')
                 assert False
@@ -85,6 +145,8 @@ def gen_commit_record(repo, commit):
         'author_datetime': commit.author.time,
         'insertions': insertions,
         'deletions': deletions,
+        'corrected_insertions': corrected_insertions,
+        'corrected_deletions': corrected_deletions,
         'details': details,
         'file_exts': list(file_exts),
     }

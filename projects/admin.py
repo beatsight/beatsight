@@ -11,4 +11,5 @@ class ProjectAdmin(ModelAdmin):
 class LanguageAdmin(ModelAdmin):
     pass
 
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(Language, LanguageAdmin)
