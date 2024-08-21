@@ -55,8 +55,8 @@ def projects(request):
             'commit_sha': e.commit_sha,
             'author_email': e.author_email,
             'author_datetime': e.author_datetime,
-            'insertions': e.insertions,
-            'deletions': e.deletions,
+            'insertions': e.corrected_insertions,
+            'deletions': e.corrected_deletions,
         })
 
     ret = []
@@ -103,7 +103,9 @@ def projects(request):
                 }
                 proj_data[project]['commits'].append(data)
 
-            tmp = subgroup[['insertions', 'deletions', 'modifications']].sum().sort_values(by='modifications', ascending=False).head(limit)
+            tmp = subgroup[
+                ['insertions', 'deletions', 'modifications']
+            ].sum().sort_values(by='modifications', ascending=False).head(limit)
             for author_email, row in tmp.iterrows():
                 insertions = row['insertions']
                 deletions = row['deletions']
@@ -199,10 +201,13 @@ def export_projects(request):
             'author_datetime': e.author_datetime,
             'insertions': e.insertions,
             'deletions': e.deletions,
+            'corrected_insertions': e.corrected_insertions,
+            'corrected_deletions': e.corrected_deletions,
         })
 
     df = pd.DataFrame(data)
     df['modifications'] = df['insertions'] + df['deletions']
+    df['corrected_modifications'] = df['corrected_insertions'] + df['corrected_deletions']
 
     if not combined:
         grouped_df = df.groupby('project')
@@ -214,12 +219,24 @@ def export_projects(request):
                 .groupby('author_email')
                 .agg(
                     commit_sha_count=('commit_sha', 'count'),
-                    insertions_sum=('insertions', 'sum'),
-                    deletions_sum=('deletions', 'sum'),
-                    modifications_sum=('modifications', 'sum')
+                    insertions=('insertions', 'sum'),
+                    deletions=('deletions', 'sum'),
+                    modifications=('modifications', 'sum'),
+                    corrected_insertions=('corrected_insertions', 'sum'),
+                    corrected_deletions=('corrected_deletions', 'sum'),
+                    corrected_modifications=('corrected_modifications', 'sum'),
                 )
                 .reset_index()
                 .sort_values(by='commit_sha_count', ascending=False)
+                .rename(columns={
+                    'commit_sha_count': '提交次数',
+                    'insertions': '增加行数',
+                    'deletions': '删除行数',
+                    'modifications': '修改行数',
+                    'corrected_insertions': '（有效）增加行数',
+                    'corrected_deletions': '（有效）删除行数',
+                    'corrected_modifications': '（有效）修改行数'
+                })
             )
             proj_dfs[project] = proj_df
 
@@ -283,8 +300,8 @@ def developers(request):
             'commit_sha': e.commit_sha,
             'author_email': e.author_email,
             'author_datetime': localtime(e.author_datetime),
-            'insertions': e.insertions,
-            'deletions': e.deletions,
+            'insertions': e.corrected_insertions,
+            'deletions': e.corrected_deletions,
         })
 
     ret = []
@@ -417,6 +434,8 @@ def export_developers(request):
             'author_datetime': localtime(e.author_datetime),
             'insertions': e.insertions,
             'deletions': e.deletions,
+            'corrected_insertions': e.corrected_insertions,
+            'corrected_deletions': e.corrected_deletions,
         })
 
     ret = []
@@ -425,6 +444,7 @@ def export_developers(request):
 
     df = pd.DataFrame(data)
     df['modifications'] = df['insertions'] + df['deletions']
+    df['corrected_modifications'] = df['corrected_insertions'] + df['corrected_deletions']
     df['author_datetime'] = pd.to_datetime(df['author_datetime'])
 
     delta_days = (df['author_datetime'].max() - df['author_datetime'].min()).days
@@ -452,14 +472,22 @@ def export_developers(request):
                 'commit_sha': 'count',
                 'insertions': 'sum',
                 'deletions': 'sum',
-                'modifications': 'sum'
+                'modifications': 'sum',
+                'corrected_insertions': 'sum',
+                'corrected_deletions': 'sum',
+                'corrected_modifications': 'sum'
             })
             .reset_index()
             .rename(columns={
-                'commit_sha': 'commit_count',
-                'insertions': 'insertions',
-                'deletions': 'deletions',
-                'modifications': 'modifications'
+                # 'author_email': '开发人员',
+                # 'date': '日期',
+                'commit_sha': '提交次数',
+                'insertions': '增加行数',
+                'deletions': '删除行数',
+                'modifications': '修改行数',
+                'corrected_insertions': '（有效）增加行数',
+                'corrected_deletions': '（有效）删除行数',
+                'corrected_modifications': '（有效）修改行数'
             })
         )
 
@@ -494,7 +522,3 @@ def export_developers(request):
             df.to_excel(writer, sheet_name=author, index=False)
 
     return response
-    
-        
-
-
