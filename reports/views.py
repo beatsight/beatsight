@@ -541,8 +541,9 @@ def export_developers(request):
             writer.sheets['Summary'].set_column(col_idx, col_idx, 15)
 
         for author, df in author_dfs.items():
-            df.to_excel(writer, sheet_name=author, index=False)
+            sheet_name = author[:30]
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
             for col_idx in [0, 1, 6, 7, 8]:
-                writer.sheets[author].set_column(col_idx, col_idx, 15)
+                writer.sheets[sheet_name].set_column(col_idx, col_idx, 15)
 
     return response
