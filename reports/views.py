@@ -176,24 +176,28 @@ def export_projects(request):
 
     qs = ProjectActiviy.objects.filter(project__in=projs)
 
-    start_date = request.GET.get('startDate', '')
-    end_date = request.GET.get('endDate', '')
-    if start_date and end_date:
-        native_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    start_date_str = request.GET['startDate']
+    end_date_str = request.GET['endDate']
+    if start_date_str and end_date_str:
+        native_dt = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
         native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        native_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        native_dt = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
         native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
         start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
         end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
 
         qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
+    else:
+        assert False
 
     qs = qs.order_by('author_datetime')
 
     data = []
     author_names = {}
+    author_emails = set()
     for e in qs:
         author_names[e.author_email] = e.author_name
+        author_emails.add(e.author_email)
         data.append({
             'project': e.project.name,
             'commit_sha': e.commit_sha,
@@ -242,18 +246,26 @@ def export_projects(request):
 
         # Create the Excel file in memory
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = f'attachment; filename=project_report.xlsx'
+        response['Content-Disposition'] = f'attachment; filename=project_report-{start_date_str}_{end_date_str}.xlsx'
 
-        with pd.ExcelWriter(response, engine='openpyxl') as writer:
-            summary_df = pd.DataFrame({
-                'projects': [';'.join(names)],
-                'start date': [request.GET.get('startDate', '')],
-                'end date': [request.GET.get('endDate', '')],
-            })
+        with pd.ExcelWriter(response, engine='xlsxwriter') as writer:
+            data = {
+                '统计项目': names,
+                '开发人员': list(author_emails),
+                '开始日期': [start_date_str],
+                '结束日期': [end_date_str],
+            }
+            max_length = max(len(names), len(author_emails))
+            filled_data = {k: v + [''] * (max_length - len(v)) for k, v in data.items()}
+            summary_df = pd.DataFrame(filled_data)
             summary_df.to_excel(writer, sheet_name='Summary', index=False)
+            for col_idx in [0, 1, 2]:
+                writer.sheets['Summary'].set_column(col_idx, col_idx, 15)
 
             for proj, df in proj_dfs.items():
                 df.to_excel(writer, sheet_name=proj, index=False)
+                for col_idx in [0, 5, 6, 7]:
+                    writer.sheets[proj].set_column(col_idx, col_idx, 15)
 
         return response
     else:
@@ -409,24 +421,28 @@ def export_developers(request):
 
     qs = ProjectActiviy.objects.filter(author_email__in=emails)
 
-    start_date = request.GET.get('startDate')
-    end_date = request.GET.get('endDate')
-    if start_date and end_date:
-        native_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    start_date_str = request.GET['startDate']
+    end_date_str = request.GET['endDate']
+    if start_date_str and end_date_str:
+        native_dt = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
         native_start_dt = native_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        native_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        native_dt = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
         native_end_dt = native_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
         start_date = make_aware(native_start_dt, timezone=pytz.timezone(settings.TIME_ZONE))
         end_date = make_aware(native_end_dt, timezone=pytz.timezone(settings.TIME_ZONE))
 
         qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
+    else:
+        assert False
 
     qs = qs.order_by('author_datetime')
 
     data = []
     author_names = {}
+    projects = set()
     for e in qs:
         author_names[e.author_email] = e.author_name
+        projects.add(e.project.name)
         data.append({
             'project': e.project.name,
             'commit_sha': e.commit_sha,
@@ -508,17 +524,25 @@ def export_developers(request):
 
     # Create the Excel file in memory
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename=developer_report.xlsx'
+    response['Content-Disposition'] = f'attachment; filename=developer_report-{start_date_str}_{end_date_str}.xlsx'
 
-    with pd.ExcelWriter(response, engine='openpyxl') as writer:
-        summary_df = pd.DataFrame({
-            'authors': [';'.join(emails)],
-            'start date': [request.GET.get('startDate', '')],
-            'end date': [request.GET.get('endDate', '')],
-        })
+    with pd.ExcelWriter(response, engine='xlsxwriter') as writer:
+        data = {
+            '开发人员': emails,
+            '统计项目': list(projects),
+            '开始日期': [start_date_str],
+            '结束日期': [end_date_str],
+        }
+        max_length = max(len(emails), len(projects))
+        filled_data = {k: v + [''] * (max_length - len(v)) for k, v in data.items()}
+        summary_df = pd.DataFrame(filled_data)
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
+        for col_idx in [0, 1, 2]:
+            writer.sheets['Summary'].set_column(col_idx, col_idx, 15)
 
         for author, df in author_dfs.items():
             df.to_excel(writer, sheet_name=author, index=False)
+            for col_idx in [0, 1, 6, 7, 8]:
+                writer.sheets[author].set_column(col_idx, col_idx, 15)
 
     return response
