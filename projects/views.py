@@ -30,7 +30,7 @@ from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDo
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
 from .models import Project, SimpleSerializer, DetailSerializer, ProjectActiviy, ProjectActiviySerializer
-from .tasks import init_repo_task, switch_repo_branch_task, cleanup_after_repo_remove_task
+from .tasks import init_repo_task, switch_repo_branch_task, cleanup_after_repo_remove_task, force_update_one_repo_task
 
 logger = logging.getLogger(settings.LOGNAME)
 
@@ -198,6 +198,9 @@ class Detail(GenericViewSet):
 
         if p.repo_branch != old_branch:
             switch_repo_branch_task.delay(p.id, p.repo_branch)
+
+        if data['re_stat'] is True:
+            force_update_one_repo_task.delay(p.id)
 
         res = SimpleSerializer(p).data
         return Response(res)

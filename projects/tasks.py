@@ -99,6 +99,30 @@ def stat_repo_task(proj_id, force=False):
         unlock_task(lock)
 
 @shared_task()
+def force_update_one_repo_task(proj_id):
+    logger.debug('start update_one_repo_task...')
+
+    try:
+        p = Project.objects.get(id=proj_id)
+    except Project.DoesNotExist:
+        return
+
+    err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
+    if err_msg:
+        p.sync_status = CONN_ERROR
+        p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
+        p.save()
+        return
+
+    if res is True:
+        p.last_sync_at = timezone.now()
+        p.save()
+
+    stat_repo_task.delay(p.id, True)
+
+    logger.debug('end update_one_repo_task')
+
+@shared_task()
 def cleanup_after_repo_remove_task(proj_name, author_emails):
     logger.debug(f'start cleanup_after_repo_remove_task {proj_name}')
 
@@ -148,6 +172,7 @@ def update_repo_task():
 
     logger.debug('end update_repo_task')
     unlock_task(lock)
+
 
 @shared_task()
 def clean_orphan_developers():
