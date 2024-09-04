@@ -25,13 +25,13 @@ class Developer(TimestampedModel):
         (INACTIVE, '不活跃')
     )
     
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, db_index=True)
     email = models.CharField(max_length=200, unique=True)
     projects = models.ManyToManyField(Project)
-    status = models.CharField(max_length=10, choices=DEV_STATUS, default=INACTIVE)
+    status = models.CharField(max_length=10, choices=DEV_STATUS, default=INACTIVE, db_index=True)
 
     first_commit_at = models.DateTimeField()
-    last_commit_at = models.DateTimeField()
+    last_commit_at = models.DateTimeField(db_index=True)
     contributed_days = models.IntegerField(default=0)
     active_days = models.IntegerField(default=0)  # days that have code commits
     active_days_ratio = models.FloatField(default=0)
@@ -40,10 +40,10 @@ class Developer(TimestampedModel):
     total_insertions = models.IntegerField(default=0)
     total_deletions = models.IntegerField(default=0)
 
-    total_projects = models.IntegerField(default=0)
+    total_projects = models.IntegerField(default=0, db_index=True)
 
     rank_level = models.CharField(max_length=10, default='-')
-    rank_percentile = models.FloatField(default=0.0)
+    rank_percentile = models.FloatField(default=0.0, db_index=True)
 
     def __str__(self):
         return f"{self.name} - {self.email}"
@@ -194,7 +194,7 @@ class SimpleSerializer(S.ModelSerializer):
 
     class Meta:
         model = Developer
-        exclude = ['id', 'projects',]
+        exclude = ['id', 'projects']
 
     def get_status_str(self, obj):
         return obj.get_status_display()

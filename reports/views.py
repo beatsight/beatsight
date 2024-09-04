@@ -129,14 +129,14 @@ def projects(request):
 
         commits = []
         loc = []
-        for email, count in group['commit_sha'].count().sort_values(ascending=False).head(limit*2).items():
+        for email, count in group['commit_sha'].count().sort_values(ascending=False).head(limit * 2).items():
             data = {
                 'author': author_names[email],
                 'commits': count,
             }
             commits.append(data)
 
-        tmp = group[['insertions', 'deletions', 'modifications']].sum().sort_values(by='modifications', ascending=False).head(limit*2)
+        tmp = group[['insertions', 'deletions', 'modifications']].sum().sort_values(by='modifications', ascending=False).head(limit * 2)
         for author_email, row in tmp.iterrows():
             insertions = row['insertions']
             deletions = row['deletions']

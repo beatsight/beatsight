@@ -41,21 +41,21 @@ class Project(TimestampedModel):
 
     name = models.CharField(max_length=200, unique=True)
     desc = models.CharField(max_length=2048, default='')
-    repo_url = models.CharField(max_length=1000)    # github/gitlab url
+    repo_url = models.CharField(max_length=1000, db_index=True)    # github/gitlab url
     repo_branch = models.CharField(max_length=100, default='master')      # master/dev/...
     repo_path = models.CharField(max_length=1000, default='')  # repo local path
     ignore_list = models.TextField(default='')
 
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
-    sync_status = models.CharField(max_length=20, choices=SYNC_STATUS, default=INIT)
+    sync_status = models.CharField(max_length=20, choices=SYNC_STATUS, default=INIT, db_index=True)
     sync_log = models.CharField(max_length=2048, default='')
 
     status = models.CharField(max_length=20, choices=PROJ_STATUS, default=INACTIVE)
     active_days = models.IntegerField(default=0)  # days that have code commits
     age = models.IntegerField(default=0)
-    active_days_ratio = models.FloatField(default=0)
-    files_count = models.IntegerField(default=0)
+    active_days_ratio = models.FloatField(default=0, db_index=True)
+    files_count = models.IntegerField(default=0, db_index=True)
     commits_count = models.IntegerField(default=0)
     first_commit_id = models.CharField(max_length=50, default='')
     last_commit_id = models.CharField(max_length=50, default='')
