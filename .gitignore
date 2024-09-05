@@ -20,3 +20,6 @@ beatsight/local_settings.py
 conf/gunicorn.conf.py
 conf/nginx.conf
 conf/supervisord.conf
+
+node_modules/
+static-local/CACHE/

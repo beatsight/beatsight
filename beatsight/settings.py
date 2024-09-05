@@ -41,9 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+
     # "corsheaders",
     'rest_framework',
     'django_celery_beat',
+    'compressor',
 
     'core.apps.CoreConfig',
     'projects.apps.ProjectsConfig',
@@ -208,6 +210,11 @@ UNFOLD = {
         "show_all_applications": True,  # Dropdown with all applications and models
     },
 }
+
+COMPRESS_ROOT = BASE_DIR / 'static-local'
+COMPRESS_ENABLED = True
+STATICFILES_FINDERS = ('compressor.finders.CompressorFinder',)
+
 
 LOGNAME = 'beatsight'
 LOGGING = {
