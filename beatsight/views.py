@@ -5,7 +5,7 @@ from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordRes
 from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 
-from .forms import LoginForm, UserPasswordResetForm, UserSetPasswordForm
+from .forms import LoginForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm
 
 def custom_exception_handler(exc, context):
     # Call the default exception handler first to get the standard error response.
@@ -43,6 +43,6 @@ class UserPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = 'accounts/password_reset_confirm.html'
     form_class = UserSetPasswordForm
 
-# class UserPasswordChangeView(PasswordChangeView):
-#     template_name = 'accounts/password_change.html'
-#     form_class = UserPasswordChangeForm
+class UserPasswordChangeView(PasswordChangeView):
+    template_name = 'accounts/password_change.html'
+    form_class = UserPasswordChangeForm

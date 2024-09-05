@@ -18,3 +18,14 @@ see: beatsight/forms.py
     <input type="password" name="new_password2" class="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="重复新密码" required id="id_new_password2">
     <button type="submit" class="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg">Set New Password</button>
 </form>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="password" name="old_password" class="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="旧密码" required id="id_old_password">
+    
+    <input type="password" name="new_password1" class="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="新密码" required id="id_new_password1">
+    
+    <input type="password" name="new_password2" class="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="重复新密码" required id="id_new_password2">
+    
+    <button type="submit" class="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg">Change Password</button>
+</form>
