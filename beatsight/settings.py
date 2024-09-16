@@ -12,8 +12,14 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import re
 from pathlib import Path
+import time
 
 from django.templatetags.static import static
+import grpc
+
+import license_pb2
+import license_pb2_grpc
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -190,6 +196,9 @@ CSRF_TRUSTED_ORIGINS = [
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 
 # ###### custsom settings
+SERVER_VERSION = '1.2.0'
+CORE_SERVICE = 'localhost:50051'
+
 LOGIN_REDIRECT_URL = '/dashboard'
 
 ALLOWED_HOSTS = [
@@ -350,3 +359,25 @@ print(f'REPO_DATA_DIR: {REPO_DATA_DIR}')
 
 if not os.path.exists(STAT_DB_DIR):
     os.makedirs(STAT_DB_DIR)
+
+core_service_connected = False
+cnt = 3
+while cnt > 0:
+    with grpc.insecure_channel(CORE_SERVICE) as channel:
+        stub = license_pb2_grpc.LicenseServiceStub(channel)
+
+        # Create a valid request
+        request = license_pb2.Empty()
+        # Call the GetLicenseData method
+        try:
+            stub.Ping(request)
+            print('Core service connected.')
+            core_service_connected = True
+            cnt = 0
+        except grpc.RpcError as e:
+            print(f"gRPC Error: {e}")
+            time.sleep(2)
+            cnt -= 1
+
+if core_service_connected is False:
+    raise Exception("Failed to start beatsight project.")

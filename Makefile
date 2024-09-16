@@ -55,6 +55,9 @@ docker.build.web:
 docker.up:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up
 
+docker.up.core:
+	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up core
+
 docker.up.app:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml up app
 

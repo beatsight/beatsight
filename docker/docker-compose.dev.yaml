@@ -1,6 +1,17 @@
 version: "3"
 
 services:
+  core:
+    container_name: beatsight_core
+    image: beatsight-core
+    ports:
+      - "50052:50051"
+    networks:
+      - beatsight-main
+    volumes:
+      - /Users/xiez/dev/beatsight-core/core.conf:/core.conf
+      - /Users/xiez/dev/beatsight-lic/license_combined.json:/license.json
+
   app:
     container_name: beatsight_dev
     build:
@@ -28,6 +39,7 @@ services:
     networks:
       - beatsight-main
     depends_on:
+      - core
       - redis
       # - celery
       # - beat
