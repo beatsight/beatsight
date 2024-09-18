@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('core', 'create_superuser'),
+        ('django_celery_beat', '0018_improve_crontab_helptext'),
     ]
 
     def install(apps, schema_editor):
