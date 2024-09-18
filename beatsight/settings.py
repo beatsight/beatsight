@@ -206,8 +206,6 @@ ALLOWED_HOSTS = [
 ]
 
 BEATSIGHT_DATA_DIR = '/beatsight-data'
-TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
-REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'repos')
 
 UNFOLD = {
     "SITE_TITLE": 'BeatSight 管理后台',
@@ -349,6 +347,8 @@ else:
     del local_settings
 
 # --------------------
+TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
+REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'repos')
 if not os.path.exists(TMP_REPO_DATA_DIR):
     os.makedirs(TMP_REPO_DATA_DIR)
 print(f'TMP_REPO_DATA_DIR: {TMP_REPO_DATA_DIR}')

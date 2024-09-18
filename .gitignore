@@ -22,5 +22,4 @@ conf/nginx.conf
 conf/supervisord.conf
 
 node_modules/
-static/CACHE/
 static-local/CACHE/

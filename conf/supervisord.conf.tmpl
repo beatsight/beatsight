@@ -1,3 +1,11 @@
+[program:core]
+command=/home/ubuntu/beatsight-core/server
+directory=/home/ubuntu/beatsight-core
+user=ubuntu
+stdout_logfile=/home/ubuntu/beatsight-core/out.log
+stderr_logfile=/home/ubuntu/beatsight-core/error.log
+redirect_stderr=true
+
 [program:web]
 command=/home/ubuntu/.local/bin/gunicorn -c /home/ubuntu/beatsight/conf/gunicorn.conf.py
 directory=/home/ubuntu/beatsight
