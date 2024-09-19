@@ -78,3 +78,17 @@ docker.sh.web:
 
 docker.down:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml down
+
+docker.dist:
+	docker build -f docker.dist/Dockerfile -t beatsight:nightly .
+
+debug.dist:
+	docker run --rm --entrypoint /bin/bash beatsight:nightly -c "tail -f /dev/null"
+
+test.dist:
+	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json beatsight:nightly debug
+
+run.dist:
+	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json -p 8080:80 beatsight:nightly prod
+
+.PHONY: docker.dist

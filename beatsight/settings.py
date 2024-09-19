@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
+import sys
 import re
 from pathlib import Path
 import time
@@ -340,11 +341,25 @@ def load_local_settings(module):
 
 try:
     from . import local_settings
+    print("loading local_settings ... Done.")
 except ImportError:
     pass
 else:
     load_local_settings(local_settings)
     del local_settings
+
+
+try:
+    sys.path.append(os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '../../runtime')
+    ))
+    import beatsight_settings
+    print("loading beatsight_settings ... Done.")
+except ImportError:
+    pass
+else:
+    load_local_settings(beatsight_settings)
+    del beatsight_settings
 
 # --------------------
 TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
@@ -360,24 +375,24 @@ print(f'REPO_DATA_DIR: {REPO_DATA_DIR}')
 if not os.path.exists(STAT_DB_DIR):
     os.makedirs(STAT_DB_DIR)
 
-core_service_connected = False
-cnt = 3
-while cnt > 0:
-    with grpc.insecure_channel(CORE_SERVICE) as channel:
-        stub = license_pb2_grpc.LicenseServiceStub(channel)
+# core_service_connected = False
+# cnt = 3
+# while cnt > 0:
+#     with grpc.insecure_channel(CORE_SERVICE) as channel:
+#         stub = license_pb2_grpc.LicenseServiceStub(channel)
 
-        # Create a valid request
-        request = license_pb2.Empty()
-        # Call the GetLicenseData method
-        try:
-            stub.Ping(request)
-            print('Core service connected.')
-            core_service_connected = True
-            cnt = 0
-        except grpc.RpcError as e:
-            print(f"gRPC Error: {e}")
-            time.sleep(2)
-            cnt -= 1
+#         # Create a valid request
+#         request = license_pb2.Empty()
+#         # Call the GetLicenseData method
+#         try:
+#             stub.Ping(request)
+#             print('Core service connected.')
+#             core_service_connected = True
+#             cnt = 0
+#         except grpc.RpcError as e:
+#             print(f"gRPC Error: {e}")
+#             time.sleep(2)
+#             cnt -= 1
 
-if core_service_connected is False:
-    raise Exception("Failed to start beatsight project.")
+# if core_service_connected is False:
+#     raise Exception("Failed to start beatsight project.")
