@@ -1,0 +1,13 @@
+.DS_Store
+*.py~
+__pycache__/
+
+.git
+docs
+snippets*
+*.md
+logs/*
+
+beatsight/local_settings.py
+
+node_modules/
