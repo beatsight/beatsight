@@ -2,6 +2,15 @@ import os
 
 BEATSIGHT_DATA_DIR = '/data'
 
+# Database settings
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BEATSIGHT_DATA_DIR, 'db.sqlite3'),
+    }
+}
+
+
 # Celery settings
 CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
