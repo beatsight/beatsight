@@ -41,6 +41,8 @@ create tag v1.2.0
 
 4. ./start.sh & ./stop.sh
 
+5. superuser: `docker compose run web python3 manage.py  createsuperuser`
+
 ### 旧版本升级（小版本）
 
 1. git fetch and checkout tag v1.2.3
