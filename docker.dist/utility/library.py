@@ -30,6 +30,10 @@ def write_file(template, path):
         output.write(template)
     output.close()
 
+def initialize_data_dir():
+    check_call('chown -R ubuntu:ubuntu /data', shell=True)
+    check_call('chmod -R 0755 /data', shell=True)
+
 def initialize_logdir(app='beatsight'):
     """create log directory for app
             /var/log/supervisor

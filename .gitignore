@@ -6,7 +6,6 @@ stats.duckdb.wal
 *.pyc
 .DS_Store
 
-vendor/repostat
 web/dist
 
 data/**

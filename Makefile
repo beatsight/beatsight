@@ -82,15 +82,15 @@ docker.down:
 VERSION ?= latest
 
 docker.dist:
-	docker build -f docker.dist/Dockerfile -t beatsight:$(VERSION) .
+	docker build -f docker.dist/Dockerfile -t beatsight/beatsight:$(VERSION) .
 
 debug.dist:
-	docker run --rm --entrypoint /bin/bash beatsight:nightly -c "tail -f /dev/null"
+	docker run --rm --entrypoint /bin/bash beatsight/beatsight:$(VERSION) -c "tail -f /dev/null"
 
 test.dist:
-	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json beatsight:nightly debug
+	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json beatsight/beatsight:$(VERSION) debug
 
 run.dist:
-	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json -p 8080:80 beatsight:$(VERSION) prod
+	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json -p 8080:80 beatsight/beatsight:$(VERSION) prod
 
 .PHONY: docker.dist

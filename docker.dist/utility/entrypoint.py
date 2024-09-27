@@ -4,12 +4,12 @@ import sys
 import time
 from subprocess import check_call
 
-from library import get_env, initialize_logdir
+from library import get_env, initialize_logdir, initialize_data_dir
 
 
 def main(argv):
     conf = get_env()
-    print(argv)
+    initialize_data_dir()
     initialize_logdir()
     os.chdir(conf['app_dir'])
 

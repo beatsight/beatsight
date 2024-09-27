@@ -1,8 +1,8 @@
 #-------------------- core server
-FROM beatsight-core:nightly as core-serv
+FROM beatsight-core:v1.2.0 as core-serv
 
 #-------------------- frontend dist
-FROM beatsight-web:nightly as frontend
+FROM beatsight-web:v1.2.0 as frontend
 
 #-------------------- web app
 
