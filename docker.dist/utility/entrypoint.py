@@ -18,7 +18,7 @@ def main(argv):
         while 1:
             time.sleep(5)
     else:
-        check_call("rm -rf static/* 2> /dev/null && python3 manage.py collectstatic --noinput", shell=True)
+        check_call("gosu ubuntu bash -c 'rm -rf static/* 2> /dev/null && python3 manage.py collectstatic --noinput'", shell=True)
 
         # Start the container.
         check_call("supervisord -c /etc/supervisor/supervisord.conf", shell=True)

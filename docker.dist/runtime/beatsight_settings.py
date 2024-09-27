@@ -1,6 +1,6 @@
 import os
 
-BEATSIGHT_DATA_DIR = '/home/ubuntu/data'
+BEATSIGHT_DATA_DIR = '/data'
 
 # Celery settings
 CELERY_BROKER_URL = "redis://redis:6379"

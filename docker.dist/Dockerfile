@@ -75,10 +75,8 @@ RUN chmod -R 755 ${HOME_DIR}
 
 WORKDIR ${INSTALL_DIR}
 
-# 执行compile_py.py脚本对INSTALL_DIR路径下项目代码进行加密
-RUN python3 ${BUILD_DIR}/compile.py --python-source=${INSTALL_DIR} \
-    && echo "\033[44;37;5m 当前项目已经执行了加密操作 \033[0m"
-
+# compile .py files
+RUN python3 ${BUILD_DIR}/compile.py --python-source=${INSTALL_DIR}
 
 # Copy the binary to the production image from the builder stage.
 COPY --from=core-serv /app/server ${INSTALL_DIR}/core-serv/server
