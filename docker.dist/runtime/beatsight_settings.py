@@ -1,5 +1,7 @@
 import os
 
+DEBUG = False
+
 BEATSIGHT_DATA_DIR = '/data'
 
 # Database settings

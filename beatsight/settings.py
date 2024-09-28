@@ -155,7 +155,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static-local')
 ]
 
-COMPRESS_ROOT = os.path.join(BASE_DIR, 'static-local')
 COMPRESS_ENABLED = True
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
