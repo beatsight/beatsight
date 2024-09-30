@@ -17,6 +17,10 @@ class Command(BaseCommand):
 
         if os.path.exists(public_key_file):
             print('key pair already generated!')
+            with open(public_key_file, "r") as file:
+                print("Public Key(id_rsa.pub):")
+                print(file.read())
+                print()
             return
 
         # Generate the RSA key pair using ssh-keygen
@@ -27,5 +31,9 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(f"RSA key pair generated: {private_key_file} and {public_key_file}")
             )
+            with open(public_key_file, "r") as file:
+                print("Public Key(id_rsa.pub):")
+                print(file.read())
+                print()
         except subprocess.CalledProcessError as e:
             self.stderr.write(self.style.ERROR(f"Error generating RSA key pair: {e}"))
