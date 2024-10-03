@@ -4,9 +4,30 @@ FROM beatsight-core:v1.2.0 as core-serv
 #-------------------- frontend dist
 FROM beatsight-web:v1.2.0 as frontend
 
-#-------------------- web app
+#-------------------- backend pyc
+FROM ubuntu:22.04 as backend
 
-#FROM python:3.9.6-slim-buster
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+&& rm -rf /var/lib/apt/lists/*
+
+ENV HOME_DIR="/home/ubuntu"
+ENV LOG_DIR="${HOME_DIR}/logs"
+ENV BUILD_DIR="${HOME_DIR}/build"
+ENV RUNTIME_DIR="${HOME_DIR}/runtime"
+ENV INSTALL_DIR="${HOME_DIR}/beatsight"
+
+COPY . ${INSTALL_DIR}
+COPY docker.dist/utility/ ${BUILD_DIR}/
+
+# compile .py files
+RUN python3 ${BUILD_DIR}/compile.py --python-source=${INSTALL_DIR}
+
+#-------------------- web app
 FROM ubuntu:22.04
 
 MAINTAINER zhengxie@beatsight.com
@@ -25,9 +46,6 @@ RUN apt-get update && apt-get install -y \
     procps \
     python3 \
     python3-pip \
-&& rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y \
     wget \
 && rm -rf /var/lib/apt/lists/*
 
@@ -69,23 +87,17 @@ RUN chmod 755 ${BUILD_DIR}/django-install.sh \
     && chmod 755 ${BUILD_DIR}/entrypoint.py \
     && bash ${BUILD_DIR}/django-install.sh
 
-COPY . ${INSTALL_DIR}
 RUN chown -R ubuntu:ubuntu ${HOME_DIR}
 RUN chmod -R 755 ${HOME_DIR}
 
 WORKDIR ${INSTALL_DIR}
 
-# compile .py files
-RUN python3 ${BUILD_DIR}/compile.py --python-source=${INSTALL_DIR}
-
 # Copy the binary to the production image from the builder stage.
+COPY --from=backend /home/ubuntu/beatsight/ ${INSTALL_DIR}
 COPY --from=core-serv /app/server ${INSTALL_DIR}/core-serv/server
 COPY --from=core-serv /app/core.conf ${INSTALL_DIR}/core-serv/core.conf
 COPY --from=frontend /app/dist ${INSTALL_DIR}/frontend/dist
 
 EXPOSE 22/tcp 8000/tcp
-#VOLUME ["${LOG_DIR}"]
-
 ENTRYPOINT exec ${BUILD_DIR}/entrypoint.py "$0" "$@"
-#ENTRYPOINT ["${BUILD_DIR}/entrypoint.py"]
 CMD ["beatsight"]
