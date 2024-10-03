@@ -1,11 +1,11 @@
 #-------------------- core server
-FROM beatsight-core:v1.2.0 as core-serv
+FROM beatsight-core:v1.2.0 AS core-serv
 
 #-------------------- frontend dist
-FROM beatsight-web:v1.2.0 as frontend
+FROM beatsight-web:v1.2.0 AS frontend
 
 #-------------------- backend pyc
-FROM ubuntu:22.04 as backend
+FROM ubuntu:22.04 AS backend
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -30,7 +30,12 @@ RUN python3 ${BUILD_DIR}/compile.py --python-source=${INSTALL_DIR}
 #-------------------- web app
 FROM ubuntu:22.04
 
-MAINTAINER zhengxie@beatsight.com
+LABEL maintainer="zhengxie@beatsight.com"
+LABEL org.opencontainers.image.title="Beatsight"
+LABEL org.opencontainers.image.description="Beatsight runtime image"
+LABEL org.opencontainers.image.url="https://www.beatsight.com/"
+LABEL org.opencontainers.image.vendor="Beatsight LLC"
+LABEL org.opencontainers.image.authors="dev@beatsight.com"
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1

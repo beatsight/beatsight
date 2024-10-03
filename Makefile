@@ -80,17 +80,18 @@ docker.down:
 	COMPOSE_PROJECT_NAME=beatsight docker-compose -f docker/docker-compose.dev.yaml down
 
 VERSION ?= latest
+IMAGE_NAME ?= beatsight/beatsight
 
 docker.dist:
-	docker build -f docker.dist/Dockerfile -t beatsight/beatsight:$(VERSION) .
+	docker build -f docker.dist/Dockerfile -t $(IMAGE_NAME):$(VERSION) .
 
 debug.dist:
-	docker run --rm --entrypoint /bin/bash beatsight/beatsight:$(VERSION) -c "tail -f /dev/null"
+	docker run --rm --entrypoint /bin/bash $(IMAGE_NAME):$(VERSION) -c "tail -f /dev/null"
 
 test.dist:
-	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json beatsight/beatsight:$(VERSION) debug
+	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json $(IMAGE_NAME):$(VERSION) debug
 
 run.dist:
-	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json -p 8080:80 beatsight/beatsight:$(VERSION) prod
+	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json -p 8080:80 $(IMAGE_NAME):$(VERSION) prod
 
 .PHONY: docker.dist

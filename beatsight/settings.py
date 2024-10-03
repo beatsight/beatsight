@@ -111,8 +111,6 @@ DATABASES = {
     }
 }
 
-STAT_DB_DIR = os.path.join(BASE_DIR, 'data/stats')
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -363,6 +361,8 @@ else:
 # --------------------
 TMP_REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'temp-repos')
 REPO_DATA_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'repos')
+STAT_DB_DIR = os.path.join(BEATSIGHT_DATA_DIR, 'stats')
+
 if not os.path.exists(TMP_REPO_DATA_DIR):
     os.makedirs(TMP_REPO_DATA_DIR)
 print(f'TMP_REPO_DATA_DIR: {TMP_REPO_DATA_DIR}')

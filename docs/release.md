@@ -12,9 +12,9 @@
 
 make docker.dist VERSION=v1.2.0
 
-### backend
+### web app
 
-make docker.dist VERSION=v1.2.0
+make docker.dist IMAGE_NAME=docker.beatsight.com/beatsight/beatsight VERSION=v1.2.0
 
 ### test image
 
