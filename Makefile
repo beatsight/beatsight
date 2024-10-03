@@ -86,7 +86,7 @@ docker.dist:
 	docker build -f docker.dist/Dockerfile -t $(IMAGE_NAME):$(VERSION) .
 
 debug.dist:
-	docker run --rm --entrypoint /bin/bash $(IMAGE_NAME):$(VERSION) -c "tail -f /dev/null"
+	docker run --name beatsight-debug --rm --entrypoint /bin/bash $(IMAGE_NAME):$(VERSION) -c "tail -f /dev/null"
 
 test.dist:
 	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json $(IMAGE_NAME):$(VERSION) debug

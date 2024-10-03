@@ -92,16 +92,16 @@ RUN chmod 755 ${BUILD_DIR}/django-install.sh \
     && chmod 755 ${BUILD_DIR}/entrypoint.py \
     && bash ${BUILD_DIR}/django-install.sh
 
-RUN chown -R ubuntu:ubuntu ${HOME_DIR}
-RUN chmod -R 755 ${HOME_DIR}
-
-WORKDIR ${INSTALL_DIR}
-
 # Copy the binary to the production image from the builder stage.
 COPY --from=backend /home/ubuntu/beatsight/ ${INSTALL_DIR}
 COPY --from=core-serv /app/server ${INSTALL_DIR}/core-serv/server
 COPY --from=core-serv /app/core.conf ${INSTALL_DIR}/core-serv/core.conf
 COPY --from=frontend /app/dist ${INSTALL_DIR}/frontend/dist
+
+RUN chown -R ubuntu:ubuntu ${HOME_DIR}
+RUN chmod -R 755 ${HOME_DIR}
+
+WORKDIR ${INSTALL_DIR}
 
 EXPOSE 22/tcp 8000/tcp
 ENTRYPOINT exec ${BUILD_DIR}/entrypoint.py "$0" "$@"
