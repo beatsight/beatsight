@@ -28,6 +28,9 @@ class Command(BaseCommand):
             subprocess.check_call([
                 'ssh-keygen', '-t', 'rsa', '-b', '2048', '-f', private_key_file, '-N', ''
             ])
+            subprocess.check_call(['chmod', '400', private_key_file])
+            subprocess.check_call(['chmod', '400', public_key_file])
+
             self.stdout.write(
                 self.style.SUCCESS(f"RSA key pair generated: {private_key_file} and {public_key_file}")
             )

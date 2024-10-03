@@ -10,8 +10,8 @@ from django.conf import settings
 logger = logging.getLogger(settings.LOGNAME)
 
 cwd = os.getcwd()
-ssh_key = f"{cwd}/data/id_rsa"
-ssh_pubkey = f"{cwd}/data/id_rsa.pub"
+ssh_key = f"{settings.BEATSIGHT_DATA_DIR}/id_rsa"
+ssh_pubkey = f"{settings.BEATSIGHT_DATA_DIR}/id_rsa.pub"
 # logger.info(f"ssh keys: {ssh_key}, {ssh_pubkey}", )
 
 # keypair = pygit2.Keypair("git", ssh_pubkey, ssh_key, "")
