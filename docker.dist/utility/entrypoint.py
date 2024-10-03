@@ -19,6 +19,7 @@ def main(argv):
             time.sleep(5)
     elif argv[1] == 'beatsight':
         check_call("gosu ubuntu bash -c 'python3 manage.py gen_rsa_keys'", shell=True)
+        check_call("gosu ubuntu bash -c 'chmod 400 /data/id_rsa*'", shell=True)
 
         check_call("gosu ubuntu bash -c 'rm -rf static/* 2> /dev/null && python3 manage.py collectstatic --noinput'", shell=True)
 
