@@ -9,7 +9,7 @@ from library import get_env, initialize_logdir, initialize_data_dir
 
 def main(argv):
     conf = get_env()
-    initialize_data_dir()
+    # initialize_data_dir()
     initialize_logdir()
     os.chdir(conf['app_dir'])
 
@@ -20,6 +20,7 @@ def main(argv):
     elif argv[1] == 'beatsight':
         check_call("gosu ubuntu bash -c 'python3 manage.py gen_rsa_keys'", shell=True)
         check_call("gosu ubuntu bash -c 'chmod 400 /data/id_rsa*'", shell=True)
+        check_call("gosu ubuntu bash -c 'rm -rf /tmp/gunicorn.pid", shell=True)
 
         check_call("gosu ubuntu bash -c 'rm -rf static/* 2> /dev/null && python3 manage.py collectstatic --noinput'", shell=True)
 

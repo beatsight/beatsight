@@ -55,7 +55,10 @@ RUN apt-get update && apt-get install -y \
 && rm -rf /var/lib/apt/lists/*
 
 # add our user and group first to make sure their IDs get assigned consistently
-RUN groupadd -r ubuntu && useradd -r -m -g ubuntu ubuntu
+#RUN set -eux; \
+#        groupadd -g 1002 ubuntu; \
+#        useradd -g ubuntu -u 1001 ubuntu
+RUN groupadd ubuntu && useradd -m -g ubuntu ubuntu
 
 # grab gosu for easy step-down from root
 ARG GOSU_VERSION=1.17
@@ -103,6 +106,10 @@ RUN chmod -R 755 ${HOME_DIR}
 
 WORKDIR ${INSTALL_DIR}
 
+RUN mkdir /data && chown ubuntu:ubuntu /data
+VOLUME /data
+
 EXPOSE 22/tcp 8000/tcp
+
 ENTRYPOINT exec ${BUILD_DIR}/entrypoint.py "$0" "$@"
 CMD ["beatsight"]
