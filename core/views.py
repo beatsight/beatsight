@@ -6,6 +6,15 @@ from beatsight.utils.response import ok, client_error, server_error
 from beatsight.utils import rpc
 
 @api_view(['GET'])
+def health(request):
+    try:
+        _ = Project.objects.count()
+        return ok('')
+    except:
+        return server_error('server error')
+
+
+@api_view(['GET'])
 def get_license(request):
     data = rpc.get_license()
     if not data:

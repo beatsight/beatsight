@@ -86,7 +86,9 @@ COPY requirements.txt ${INSTALL_DIR}/requirements.txt
 RUN cd ${INSTALL_DIR} && pip3 install -r requirements.txt && cd -
 
 # Set up application and its running environment
+#RUN cp -r docker.dist/utility/ ${BUILD_DIR}/ && rm -f ${BUILD_DIR}/compile.py
 COPY docker.dist/utility/ ${BUILD_DIR}/
+RUN rm -f ${BUILD_DIR}/compile.py
 COPY docker.dist/runtime/ ${RUNTIME_DIR}/
 
 # Update nginx/uswgi/..etc confs

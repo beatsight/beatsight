@@ -83,7 +83,7 @@ VERSION ?= latest
 IMAGE_NAME ?= beatsight/beatsight
 
 docker.dist:
-	docker build -f docker.dist/Dockerfile -t $(IMAGE_NAME):$(VERSION) .
+	docker build -f Dockerfile -t $(IMAGE_NAME):$(VERSION) .
 
 debug.dist:
 	docker run --name beatsight-debug --rm --entrypoint /bin/bash $(IMAGE_NAME):$(VERSION) -c "tail -f /dev/null"
