@@ -29,7 +29,7 @@ DEFAULT_FROM_EMAIL = 'mingdid@163.com'  # Default from email address
 
 
 # Logging
-LOG_DIR = '/home/ubuntu/logs/beatsight'
+LOG_DIR = '/home/beatsight/logs/beatsight'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,

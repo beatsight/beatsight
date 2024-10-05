@@ -24,9 +24,9 @@ EOF
 # configure supervisord to start Core service
 cat > /etc/supervisor/conf.d/core.conf <<EOF
 [program:core]
-command=/home/ubuntu/beatsight/core-serv/server
-directory=/home/ubuntu/beatsight/core-serv
-user=ubuntu
+command=/home/beatsight/app/core-serv/server
+directory=/home/beatsight/app/core-serv
+user=beatsight
 stdout_logfile=${LOG_DIR}/beatsight/core.out.log
 stderr_logfile=${LOG_DIR}/beatsight/core.error.log
 redirect_stderr=true
@@ -35,11 +35,11 @@ EOF
 # configure supervisord to start Web using gunicorn
 cat > /etc/supervisor/conf.d/web.conf <<EOF
 [program:web]
-command=/usr/local/bin/gunicorn -c /home/ubuntu/runtime/gunicorn.conf.py
-directory=/home/ubuntu/beatsight
-user=ubuntu
+command=/usr/local/bin/gunicorn -c /home/beatsight/runtime/gunicorn.conf.py
+directory=/home/beatsight/app
+user=beatsight
 stdout_logfile=${LOG_DIR}/supervisor/out.log
 stderr_logfile=${LOG_DIR}/supervisor/error.log
 redirect_stderr=true
-environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/home/ubuntu/beatsight/vendor/repostat"
+environment=DJANGO_SETTINGS_MODULE="beatsight.settings",PYTHONPATH="/home/beatsight/app/vendor/repostat"
 EOF

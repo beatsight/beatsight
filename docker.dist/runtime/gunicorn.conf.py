@@ -14,18 +14,18 @@ threads = 2
 timeout = 60
 
 # Path to the Django project directory
-chdir = '/home/ubuntu/beatsight'
+chdir = '/home/beatsight/app'
 
 # WSGI module name (default is 'app.wsgi:application')
 wsgi_app = 'beatsight.wsgi:application'
 
 # User and group to run Gunicorn as
-user = 'ubuntu'
-group = 'ubuntu'
+user = 'beatsight'
+group = 'beatsight'
 
 # Log files
-accesslog = '/home/ubuntu/logs/beatsight/gunicorn-access.log'
-errorlog = '/home/ubuntu/logs/beatsight/gunicorn-error.log'
+accesslog = '/home/beatsight/logs/beatsight/gunicorn-access.log'
+errorlog = '/home/beatsight/logs/beatsight/gunicorn-error.log'
 
 # Logging level
 loglevel = 'info'

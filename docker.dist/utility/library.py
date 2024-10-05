@@ -30,10 +30,6 @@ def write_file(template, path):
         output.write(template)
     output.close()
 
-def initialize_data_dir():
-    check_call('chown -R ubuntu:ubuntu /data', shell=True)
-    check_call('chmod -R 0755 /data', shell=True)
-
 def initialize_logdir(app='beatsight'):
     """create log directory for app
             /var/log/supervisor
@@ -44,11 +40,11 @@ def initialize_logdir(app='beatsight'):
     log_dir = conf['log_dir']
     for dirname in ['supervisor', app, 'nginx']:
         check_call('mkdir -p %s/%s' % (log_dir, dirname), shell=True)
-        check_call('chown -R ubuntu:ubuntu %s/%s' % (log_dir, dirname), shell=True)
+        check_call('chown -R beatsight:beatsight %s/%s' % (log_dir, dirname), shell=True)
         check_call('chmod -R 0755 %s/%s' % (log_dir, dirname), shell=True)
 
     # get around of supervisor log permission bug
     # issue: https://github.com/Supervisor/supervisor/issues/123
     for filename in ['beatsight.log', 'core.out.log', 'script.log', 'task.log']:
         check_call('touch %s/%s/%s' % (log_dir, app, filename), shell=True)
-        check_call('chown -R ubuntu:ubuntu %s/%s/%s' % (log_dir, app, filename), shell=True)
+        check_call('chown -R beatsight:beatsight %s/%s/%s' % (log_dir, app, filename), shell=True)

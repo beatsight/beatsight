@@ -15,11 +15,11 @@ RUN apt-get update && apt-get install -y \
     python3 \
 && rm -rf /var/lib/apt/lists/*
 
-ENV HOME_DIR="/home/ubuntu"
+ENV HOME_DIR="/home/beatsight"
 ENV LOG_DIR="${HOME_DIR}/logs"
 ENV BUILD_DIR="${HOME_DIR}/build"
 ENV RUNTIME_DIR="${HOME_DIR}/runtime"
-ENV INSTALL_DIR="${HOME_DIR}/beatsight"
+ENV INSTALL_DIR="${HOME_DIR}/app"
 
 COPY . ${INSTALL_DIR}
 COPY docker.dist/utility/ ${BUILD_DIR}/
@@ -56,9 +56,9 @@ RUN apt-get update && apt-get install -y \
 
 # add our user and group first to make sure their IDs get assigned consistently
 #RUN set -eux; \
-#        groupadd -g 1002 ubuntu; \
-#        useradd -g ubuntu -u 1001 ubuntu
-RUN groupadd ubuntu && useradd -m -g ubuntu ubuntu
+#        groupadd -g 1002 beatsight; \
+#        useradd -g beatsight -u 1001 beatsight
+RUN groupadd beatsight && useradd -m -g beatsight beatsight
 
 # grab gosu for easy step-down from root
 ARG GOSU_VERSION=1.17
@@ -70,11 +70,11 @@ RUN wget --quiet -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases
   && echo "$GOSU_SHA256 /usr/local/bin/gosu" | sha256sum --check --status \
   && chmod +x /usr/local/bin/gosu
 
-ENV HOME_DIR="/home/ubuntu"
+ENV HOME_DIR="/home/beatsight"
 ENV LOG_DIR="${HOME_DIR}/logs"
 ENV BUILD_DIR="${HOME_DIR}/build"
 ENV RUNTIME_DIR="${HOME_DIR}/runtime"
-ENV INSTALL_DIR="${HOME_DIR}/beatsight"
+ENV INSTALL_DIR="${HOME_DIR}/app"
 
 # SET work dir
 WORKDIR ${HOME_DIR}
@@ -96,17 +96,17 @@ RUN chmod 755 ${BUILD_DIR}/django-install.sh \
     && bash ${BUILD_DIR}/django-install.sh
 
 # Copy the binary to the production image from the builder stage.
-COPY --from=backend /home/ubuntu/beatsight/ ${INSTALL_DIR}
+COPY --from=backend /home/beatsight/app/ ${INSTALL_DIR}
 COPY --from=core-serv /app/server ${INSTALL_DIR}/core-serv/server
 COPY --from=core-serv /app/core.conf ${INSTALL_DIR}/core-serv/core.conf
 COPY --from=frontend /app/dist ${INSTALL_DIR}/frontend/dist
 
-RUN chown -R ubuntu:ubuntu ${HOME_DIR}
+RUN chown -R beatsight:beatsight ${HOME_DIR}
 RUN chmod -R 755 ${HOME_DIR}
 
 WORKDIR ${INSTALL_DIR}
 
-RUN mkdir /data && chown ubuntu:ubuntu /data
+RUN mkdir /data && chown beatsight:beatsight /data
 VOLUME /data
 
 EXPOSE 22/tcp 8000/tcp
