@@ -1,8 +1,8 @@
 #-------------------- core server
-FROM beatsight-core:v1.2.0 AS core-serv
+FROM beatsight-core:latest AS core-serv
 
 #-------------------- frontend dist
-FROM beatsight-web:v1.2.0 AS frontend
+FROM beatsight-web:latest AS frontend
 
 #-------------------- backend pyc
 FROM ubuntu:22.04 AS backend

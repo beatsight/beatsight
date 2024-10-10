@@ -30,7 +30,7 @@ def get_license(request):
 def system_info(request):
     data = rpc.get_license()
     if not data:
-        return server_error("license 无效，请联系管理员。")
+        return server_error("授权信息无效，请联系管理员。")
 
     current_projects = Project.objects.count()
     data.update({

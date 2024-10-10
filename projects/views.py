@@ -111,6 +111,9 @@ class ListCreate(generics.ListCreateAPIView):
         return pnp.get_paginated_response(res)
 
     def create(self, request):
+        if not request.user.is_staff:
+            return client_error("只有管理员可以创建项目")
+
         req_data = request.data
         test_conn = True if req_data.get('test_conn', 0) == 1 else False
 
@@ -178,6 +181,9 @@ class Detail(GenericViewSet):
     def update(self, request, *args, **kwargs):
         p = self.get_object()
 
+        if not request.user.is_staff:
+            return client_error("只有管理员可以修改项目")
+
         req_data = json.loads(request.body)
         test_conn = True if req_data.get('test_conn', 0) == 1 else False
 
@@ -212,6 +218,9 @@ class Detail(GenericViewSet):
 
     def destroy(self, request, *args, **kwargs):
         p = self.get_object()
+
+        if not request.user.is_staff:
+            return client_error("只有管理员可以删除项目")
 
         proj_name = p.name
         author_emails = [dev.email for dev in p.developer_set.all()]
