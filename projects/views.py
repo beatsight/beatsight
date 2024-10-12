@@ -81,6 +81,8 @@ class ListCreate(generics.ListCreateAPIView):
                 qs = qs.order_by(f'-{sort_by}')
             else:
                 qs = qs.order_by(sort_by)
+        else:
+            qs = qs.order_by('-created_at')
 
         return qs
 

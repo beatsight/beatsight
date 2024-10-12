@@ -51,8 +51,8 @@ class ListCreate(generics.ListCreateAPIView):
                 qs = qs.order_by(f'-{sort_by}')
             else:
                 qs = qs.order_by(sort_by)
-        # else:
-        #     qs = qs.order_by(['-rank_percentile', 'status'])
+        else:
+            qs = qs.order_by('status', 'rank_percentile')
 
         return qs
 

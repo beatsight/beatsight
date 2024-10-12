@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # "corsheaders",
     'rest_framework',
     'django_celery_beat',
+    'django_celery_results',
     'compressor',
 
     'core.apps.CoreConfig',
@@ -176,8 +177,8 @@ REST_FRAMEWORK = {
 }
 
 # Celery settings
-CELERY_BROKER_URL = "redis://localhost:6379"
-CELERY_RESULT_BACKEND = "redis://localhost:6379"
+CELERY_BROKER_URL = "amqp://guest:guest@rabbitmq:5672"
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

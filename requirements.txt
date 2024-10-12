@@ -10,6 +10,8 @@ XlsxWriter==3.2.0
 django-compressor==4.5.1
 grpcio==1.66.1
 grpcio-tools
+kombu==5.4.2
+django-celery-results==2.5.1
 
 gunicorn
 supervisor

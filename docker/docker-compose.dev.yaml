@@ -1,5 +1,15 @@
 version: "3"
 
+x-healthcheck-defaults: &healthcheck_defaults
+  # Avoid setting the interval too small, as docker uses much more CPU than one would expect.
+  # Related issues:
+  # https://github.com/moby/moby/issues/39102
+  # https://github.com/moby/moby/issues/39388
+  interval: 30s
+  timeout: 30s
+  retries: 10
+  start_period: 10s
+
 services:
   core:
     container_name: beatsight_core
@@ -41,6 +51,7 @@ services:
     depends_on:
       - core
       - redis
+      - rabbitmq
       # - celery
       # - beat
 
@@ -58,9 +69,27 @@ services:
   #   networks:
   #     - beatsight-main
 
+  rabbitmq:
+    container_name: beatsight-mq
+    image: rabbitmq:3-management-alpine
+    healthcheck:
+      <<: *healthcheck_defaults
+      test: rabbitmq-diagnostics -q ping
+    ports:
+        # - 5672:5672
+        - 15672:15672
+    volumes:
+        - beatsight-mq:/var/lib/rabbitmq
+        - beatsight-mq-log:/var/log/rabbitmq
+    networks:
+      - beatsight-main
+
   redis:
     container_name: beatsight-reids
     image: redis:alpine
+    healthcheck:
+      <<: *healthcheck_defaults
+      test: redis-cli ping
     volumes:
       - redis-data:/data
     networks:
@@ -103,3 +132,7 @@ networks:
 volumes:
   repo-data:
   redis-data:
+  beatsight-mq:
+  # These store ephemeral data that needn't persist across restarts.
+  # That said, volumes will be persisted across restarts until they are deleted.
+  beatsight-mq-log:
