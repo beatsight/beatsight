@@ -96,7 +96,7 @@ def get_a_project_stat(p: Project, force=False):
     res = fetch_from_duckdb(sql, db)
     assert len(res) == 1
     p.last_commit_id, p.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
-    p.age = (p.last_commit_at - p.first_commit_at).days
+    p.age = (p.last_commit_at - p.first_commit_at).days + 1
 
     sql = f''' SELECT
     COUNT(*) AS total_commits,

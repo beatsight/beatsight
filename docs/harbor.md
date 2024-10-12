@@ -19,5 +19,8 @@ sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d docker.beatsight.com
 
 ### perm & priv key
-root@instance-sentry:/opt/harbor# less  /etc/letsencrypt/live/docker.beatsight.com/fullchain.pem
-root@instance-sentry:/opt/harbor# less /etc/letsencrypt/live/docker.beatsight.com/privkey.pem
+
+```
+   ssl_certificate /etc/letsencrypt/live/reg.beatsight.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/reg.beatsight.com/privkey.pem;
+```

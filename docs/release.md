@@ -6,15 +6,15 @@
 
 ### core
 
-➜  beatsight-core git:(master) ✗ make docker.dist VERSION=v1.2.0
+➜  beatsight-core git:(master) ✗ make docker.dist
 
 ### frontend
 
-make docker.dist VERSION=v1.2.0
+make docker.dist
 
 ### web app
 
-make docker.dist IMAGE_NAME=docker.beatsight.com/beatsight/beatsight VERSION=v1.2.0
+make docker.dist IMAGE_NAME=docker.beatsight.com/beatsight/beatsight VERSION=v1.2.2
 
 ### test image
 
