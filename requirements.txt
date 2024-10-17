@@ -12,6 +12,7 @@ grpcio==1.66.1
 grpcio-tools
 kombu==5.4.2
 django-celery-results==2.5.1
+psycopg[binary]==3.2.3
 
 gunicorn
 supervisor

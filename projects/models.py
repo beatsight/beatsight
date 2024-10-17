@@ -96,7 +96,7 @@ class ProjectLanguage(TimestampedModel):
 class ProjectActiviy(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     commit_sha = models.CharField(max_length=50)
-    commit_message = models.CharField(max_length=2000)
+    commit_message = models.TextField(default='')
     author_name = models.CharField(max_length=200)
     author_email = models.CharField(max_length=200, db_index=True)
     author_datetime = models.DateTimeField(db_index=True)

@@ -30,7 +30,7 @@ def main(argv):
     else:
         # Run the command provided as the second argument
         command = ' '.join(argv[1:])  # Join all arguments after the first
-        check_call(f"gosu beatsight bash -c '{command}'", shell=True)
+        check_call(f"{command}", shell=True)
 
 if __name__ == "__main__":
     # main program
