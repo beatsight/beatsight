@@ -85,18 +85,22 @@ def stat_repo_task(proj_id, force=False):
 
     try:
         get_a_project_stat(proj, force=force)
-        proj.sync_status = STAT_SUCCESS
-        proj.sync_log = ''
-        proj.save()
+        sync_status = STAT_SUCCESS
+        sync_log = ''
         logging.info(f'finish stat_repo_task {proj_id}')
     except Exception as e:
-        proj.sync_status = STAT_ERROR
-        proj.sync_log = f'统计失败，错误日志：{e}'
-        proj.save()
+        sync_status = STAT_ERROR
+        sync_log = f'统计失败，错误日志：{e}'
         logger.error(f'error in stat_repo_task project: {proj.name}-{proj_id}')
         logger.exception(e)
     finally:
         unlock_task(lock)
+
+    proj = Project.objects.get(id=proj_id)
+    proj.sync_status = sync_status
+    proj.sync_log = sync_log
+    proj.save()
+
 
 @shared_task()
 def force_update_one_repo_task(proj_id):
