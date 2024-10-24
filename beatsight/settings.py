@@ -214,12 +214,12 @@ UNFOLD = {
             "rel": "icon",
             "sizes": "32x32",
             "type": "image/png",
-            "href": lambda request: static("assets/img/favicon.ico"),
+            "href": lambda request: static("assets/img/icon.png"),
         },
     ],
     "SITE_LOGO": {
-        "light": lambda request: static("assets/img/logo.jpg"),  # light mode
-        "dark": lambda request: static("assets/img/logo-dark.jpg"),  # dark mode
+        "light": lambda request: static("assets/img/logo.png"),  # light mode
+        "dark": lambda request: static("assets/img/logo-dark.png"),  # dark mode
     },
     "SIDEBAR": {
         "show_search": True,  # Search in applications and models names

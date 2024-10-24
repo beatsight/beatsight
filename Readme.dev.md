@@ -8,6 +8,13 @@ fork from: https://github.com/app-generator/django-soft-dashboard-tailwind/tree/
 
 ## Admin site with TailwindCSS
 
+## Docker
+
+https://github.com/redis/docker-library-redis/blob/master/docker-entrypoint.sh
+
+https://github.com/cagrias/django-rabbitmq-celery-docker-example/blob/master/docker-compose.yml
+
+https://develop.sentry.dev/self-hosted/releases/
 
 
 

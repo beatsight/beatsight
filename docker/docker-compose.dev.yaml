@@ -19,11 +19,11 @@ services:
     networks:
       - beatsight-main
     volumes:
-      - /Users/xiez/dev/beatsight-core/core.conf:/core.conf
-      - /Users/xiez/dev/beatsight-lic/license_combined.json:/license.json
+      - ../../beatsight-core/core.conf:/core.conf
+      - ../../beatsight-core/license.json:/license.json
 
   app:
-    container_name: beatsight_dev
+    container_name: ${APP_NAME:-beatsight_dev}
     build:
       context: ..
       dockerfile: docker/Dockerfile-dev
