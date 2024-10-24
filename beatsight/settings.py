@@ -207,8 +207,8 @@ ALLOWED_HOSTS = [
 BEATSIGHT_DATA_DIR = '/beatsight-data'
 
 UNFOLD = {
-    "SITE_TITLE": 'BeatSight 管理后台',
-    "SITE_HEADER": 'BeatSight 管理后台',
+    "SITE_TITLE": 'Beatsight 管理后台',
+    "SITE_HEADER": 'Beatsight 管理后台',
     "SITE_FAVICONS": [
         {
             "rel": "icon",
