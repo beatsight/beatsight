@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 import os
-from subprocess import call, check_call
-
+from subprocess import call, check_call, run
+import pwd
 
 def get_env():
     """
@@ -48,3 +48,18 @@ def initialize_logdir(app='beatsight'):
     for filename in ['beatsight.log', 'core.out.log', 'script.log', 'task.log']:
         check_call('touch %s/%s/%s' % (log_dir, app, filename), shell=True)
         check_call('chown -R beatsight:beatsight %s/%s/%s' % (log_dir, app, filename), shell=True)
+
+def chown_data_dir():
+    # Define the directories to check
+    directories = ['/data/repos', '/data/stats', '/data/temp-repos']
+    for directory in directories:
+        try:
+            # Get the current owner of the directory
+            owner = pwd.getpwuid(os.stat(directory).st_uid).pw_name
+            # Check if the owner is not 'beatsight'
+            if owner != 'beatsight':
+                print(f"Changing ownership of {directory} to beatsight")
+                # Change ownership recursively
+                run(['chown', '-R', 'beatsight', directory], check=True)
+        except Exception as e:
+            print(f"Error processing chown {directory}: {e}")

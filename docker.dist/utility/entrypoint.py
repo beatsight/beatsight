@@ -4,12 +4,13 @@ import sys
 import time
 from subprocess import check_call
 
-from library import get_env, initialize_logdir
+from library import get_env, initialize_logdir, chown_data_dir
 
 
 def main(argv):
     conf = get_env()
     initialize_logdir()
+    chown_data_dir()
     os.chdir(conf['app_dir'])
 
     if argv[1] == 'debug':
