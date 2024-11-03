@@ -104,27 +104,36 @@ def stat_repo_task(proj_id, force=False):
 
 @shared_task()
 def force_update_one_repo_task(proj_id):
-    logger.debug('start update_one_repo_task...')
+    logger.debug(f'start force_update_one_repo_task, proj_id: {proj_id}...')
 
     try:
         p = Project.objects.get(id=proj_id)
     except Project.DoesNotExist:
         return
 
-    err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
-    if err_msg:
-        p.sync_status = CONN_ERROR
-        p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
-        p.save()
-        return
-
-    if res is True:
+    if not os.path.exists(p.repo_path):  # 初始化时异常，导致未获取到项目，需要重新获取
+        local_path = full_clone_repo_with_branch(p.repo_url, p.name, p.repo_branch)
+        p.repo_path = local_path
+        p.sync_status = CONN_SUCCESS
         p.last_sync_at = timezone.now()
         p.save()
+        stat_repo_task.delay(proj_id, True)
+    else:
+        err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
+        if err_msg:
+            logger.debug(f'force_update_one_repo_task got error during pull_repo_updates: {err_msg}')
+            p.sync_status = CONN_ERROR
+            p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
+            p.save()
+            return
+        else:
+            p.sync_status = CONN_SUCCESS
+            p.sync_log = ''
+            p.last_sync_at = timezone.now()
+            p.save()
+            stat_repo_task.delay(p.id, True)
 
-    stat_repo_task.delay(p.id, True)
-
-    logger.debug('end update_one_repo_task')
+    logger.debug('end force_update_one_repo_task')
 
 @shared_task()
 def cleanup_after_repo_remove_task(proj_name, author_emails):
@@ -166,12 +175,14 @@ def update_repo_task():
             p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
             p.save()
             continue
+        else:
+            p.sync_status = CONN_SUCCESS
+            p.sync_log = ''
+            p.last_sync_at = timezone.now()
+            p.save()
 
         if res is True:
             logger.info(f'{p.id} - {p.name} has new updates, start stat task')
-            p.last_sync_at = timezone.now()
-            p.sync_status = STATING
-            p.save()
             stat_repo_task.delay(p.id, False)
 
     logger.debug('end update_repo_task')
@@ -188,5 +199,3 @@ def clean_orphan_developers():
             logger.debug(f'delete orphan developer {dev.email}')
 
     logger.debug('end clean_orphan_developers')
-
-    

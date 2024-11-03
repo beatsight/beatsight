@@ -125,6 +125,9 @@ def get_current_branch(repo_path):
         os.chdir(old_cwd)
 
 def pull_repo_updates(repo_path, branch):
+    assert repo_path, f'{repo_path} can not be empty'
+    assert branch, f'{branch} can not be empty'
+
     os.environ["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no"
 
     # Change directory to the cloned repository
