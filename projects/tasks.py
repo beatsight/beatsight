@@ -3,12 +3,11 @@ import time
 import logging
 
 from django.conf import settings
-from django.utils import timezone
 from celery import shared_task
 
 from projects.models import Project
 from developers.models import Developer
-from beatsight.consts import CONN_SUCCESS, CONN_ERROR, STATING, STAT_SUCCESS, STAT_ERROR, INIT
+from beatsight.consts import INIT
 from beatsight.utils.task_lock import lock_task, unlock_task
 from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch, pull_repo_updates
 from beatsight import celery_app
@@ -35,14 +34,12 @@ def init_repo_task(proj_id, repo_url, name, repo_branch):
     try:
         local_path = full_clone_repo_with_branch(repo_url, name, repo_branch)
         proj.repo_path = local_path
-        proj.sync_status = CONN_SUCCESS
-        proj.last_sync_at = timezone.now()
+        proj.sync_success()
         proj.save()
 
         stat_repo_task.delay(proj_id, True)
     except Exception as e:
-        proj.sync_status = CONN_ERROR
-        proj.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
+        proj.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{e}')
         proj.save()
 
 @shared_task()
@@ -56,16 +53,15 @@ def switch_repo_branch_task(proj_id, repo_branch):
 
     err_msg, res = switch_repo_branch(proj.repo_path, repo_branch)
     if err_msg:
-        proj.sync_status = CONN_ERROR
-        proj.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{e}'
+        proj.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
         proj.save()
         return
 
     if res is True:
-        proj.sync_status = CONN_SUCCESS
-        proj.sync_log = ''
+        proj.sync_success()
         proj.save()
-        stat_repo_task.delay(proj_id, True)
+
+    stat_repo_task.delay(proj_id, True)
 
 @shared_task()
 def stat_repo_task(proj_id, force=False):
@@ -78,29 +74,28 @@ def stat_repo_task(proj_id, force=False):
 
     try:
         proj = Project.objects.get(id=proj_id)
-        proj.sync_status = STATING
-        proj.save()
     except Project.DoesNotExist:
         return
+    proj.start_stat()
+    proj.save()
 
+    log = ''
     try:
-        get_a_project_stat(proj, force=force)
-        sync_status = STAT_SUCCESS
-        sync_log = ''
+        get_a_project_stat(proj, force=force)  # may take a while
         logging.info(f'finish stat_repo_task {proj_id}')
     except Exception as e:
-        sync_status = STAT_ERROR
-        sync_log = f'统计失败，错误日志：{e}'
+        log = f'统计失败，错误日志：{e}'
         logger.error(f'error in stat_repo_task project: {proj.name}-{proj_id}')
         logger.exception(e)
     finally:
         unlock_task(lock)
 
     proj = Project.objects.get(id=proj_id)
-    proj.sync_status = sync_status
-    proj.sync_log = sync_log
+    if log:
+        proj.stat_error(log)
+    else:
+        proj.stat_success()
     proj.save()
-
 
 @shared_task()
 def force_update_one_repo_task(proj_id):
@@ -114,22 +109,19 @@ def force_update_one_repo_task(proj_id):
     if not os.path.exists(p.repo_path):  # 初始化时异常，导致未获取到项目，需要重新获取
         local_path = full_clone_repo_with_branch(p.repo_url, p.name, p.repo_branch)
         p.repo_path = local_path
-        p.sync_status = CONN_SUCCESS
-        p.last_sync_at = timezone.now()
+        p.sync_success()
         p.save()
         stat_repo_task.delay(proj_id, True)
     else:
+        # TODO: remove current branch and fetch new branch
         err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
         if err_msg:
             logger.debug(f'force_update_one_repo_task got error during pull_repo_updates: {err_msg}')
-            p.sync_status = CONN_ERROR
-            p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
+            p.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
             p.save()
             return
         else:
-            p.sync_status = CONN_SUCCESS
-            p.sync_log = ''
-            p.last_sync_at = timezone.now()
+            p.sync_success()
             p.save()
             stat_repo_task.delay(p.id, True)
 
@@ -171,14 +163,11 @@ def update_repo_task():
     for p in Project.objects.exclude(sync_status=INIT):
         err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
         if err_msg:
-            p.sync_status = CONN_ERROR
-            p.sync_log = f'项目地址无法访问或者分支不存在，错误日志：{err_msg}'
+            p.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
             p.save()
             continue
         else:
-            p.sync_status = CONN_SUCCESS
-            p.sync_log = ''
-            p.last_sync_at = timezone.now()
+            p.sync_success()
             p.save()
 
         if res is True:

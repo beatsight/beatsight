@@ -7,7 +7,7 @@ from rest_framework import serializers as S
 
 from beatsight.models import TimestampedModel
 from beatsight.consts import (
-    ACTIVE, INACTIVE, INIT, CONN_SUCCESS, CONN_ERROR,
+    INIT, CONN_SUCCESS, CONN_ERROR,
     STATING, STAT_SUCCESS, STAT_ERROR,
 )
 from beatsight.utils.pl_color import PL_COLOR
@@ -25,15 +25,13 @@ class LanguageSerializer(S.ModelSerializer):
 
 
 class Project(TimestampedModel):
-    PROJ_STATUS = (
-        (ACTIVE, '活跃'),
-        (INACTIVE, '不活跃'),
-    )
-
     SYNC_STATUS = (
         (INIT, '初始化'),
         (CONN_SUCCESS, '连接成功'),
         (CONN_ERROR, '连接失败'),
+    )
+
+    STATUS = (
         (STATING, '统计中'),
         (STAT_SUCCESS, '统计完成'),
         (STAT_ERROR, '统计失败'),
@@ -49,9 +47,11 @@ class Project(TimestampedModel):
     last_stat_commit = models.CharField(max_length=50, default=None, null=True)
     last_sync_at = models.DateTimeField(default=None, null=True)
     sync_status = models.CharField(max_length=20, choices=SYNC_STATUS, default=INIT, db_index=True)
-    sync_log = models.CharField(max_length=2048, default='')
+    error_log = models.CharField(max_length=2048, default='')
 
-    status = models.CharField(max_length=20, choices=PROJ_STATUS, default=INACTIVE)
+    status = models.CharField(max_length=20, choices=STATUS, default=STATING, db_index=True)
+
+    is_active = models.BooleanField(default=False)
     active_days = models.IntegerField(default=0)  # days that have code commits
     age = models.IntegerField(default=0)
     active_days_ratio = models.FloatField(default=0, db_index=True)
@@ -72,11 +72,32 @@ class Project(TimestampedModel):
     def get_ignore_list(self):
         return [e.strip() for e in self.ignore_list.split('\n')]
 
+    def sync_success(self):
+        self.sync_status = CONN_SUCCESS
+        self.error_log = ''
+        self.last_sync_at = timezone.now()
+
+    def sync_error(self, err_msg):
+        self.sync_status = CONN_ERROR
+        self.error_log = err_msg
+
+    def start_stat(self):
+        self.status = STATING
+        self.save()
+
+    def stat_success(self):
+        self.status = STAT_SUCCESS
+        self.error_log = ''
+
+    def stat_error(self, err_msg):
+        self.status = STAT_ERROR
+        self.error_log = err_msg
+
     def save(self, *args, **kwargs):
         if self.last_commit_at and (timezone.now() - self.last_commit_at).days > 90:
-            self.status = INACTIVE
+            self.is_active = False
         else:
-            self.status = ACTIVE
+            self.is_active = True
 
         if self.age == 0:
             self.active_days_ratio = 0
