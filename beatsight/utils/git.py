@@ -109,6 +109,21 @@ def switch_repo_branch(repo_path, branch):
         os.chdir(old_cwd)
     return err, res
 
+def rename_current_branch(repo_path):
+    # Change directory to the cloned repository
+    old_cwd = os.getcwd()
+    os.chdir(repo_path)
+    # Get the current Git branch
+    try:
+        subprocess.run(['git', 'branch', '-M', 'tmp'], check=True)
+        return '', True
+    except subprocess.CalledProcessError as e:
+        err = "Error: Could not rename current branch."
+        logger.exception(e)
+        return err, False
+    finally:
+        os.chdir(old_cwd)
+
 def get_current_branch(repo_path):
     # Change directory to the cloned repository
     old_cwd = os.getcwd()

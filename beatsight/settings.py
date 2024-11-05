@@ -227,6 +227,11 @@ UNFOLD = {
     },
 }
 
+PROJECT_REPO_URL_MAP = {
+    '@github.com': 'https://github.com',
+    '@gitlab.com': 'https://gitlab.com',
+}
+
 
 LOGNAME = 'beatsight'
 LOGGING = {

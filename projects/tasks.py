@@ -9,7 +9,7 @@ from projects.models import Project
 from developers.models import Developer
 from beatsight.consts import INIT
 from beatsight.utils.task_lock import lock_task, unlock_task
-from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch, pull_repo_updates
+from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch, pull_repo_updates, rename_current_branch
 from beatsight import celery_app
 from stats.views import get_a_project_stat, calculate_authors_data
 from stats.utils import delete_dataframes_from_duckdb
@@ -44,12 +44,12 @@ def init_repo_task(proj_id, repo_url, name, repo_branch):
 
 @shared_task()
 def switch_repo_branch_task(proj_id, repo_branch):
+    logger.debug(f'project:{proj_id} switch repo branch to {repo_branch}')
+
     try:
         proj = Project.objects.get(id=proj_id)
     except Project.DoesNotExist:
         return
-
-    logger.debug(f'switch repo branch to {repo_branch} - {proj.repo_path}')
 
     err_msg, res = switch_repo_branch(proj.repo_path, repo_branch)
     if err_msg:
@@ -113,17 +113,23 @@ def force_update_one_repo_task(proj_id):
         p.save()
         stat_repo_task.delay(proj_id, True)
     else:
-        # TODO: remove current branch and fetch new branch
-        err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
+        err_msg, res = rename_current_branch(p.repo_path)
         if err_msg:
-            logger.debug(f'force_update_one_repo_task got error during pull_repo_updates: {err_msg}')
-            p.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
+            p.sync_error(f'更新失败，错误日志：{err_msg}')
             p.save()
             return
-        else:
-            p.sync_success()
-            p.save()
-            stat_repo_task.delay(p.id, True)
+        switch_repo_branch_task.delay(p.id, p.repo_branch)
+
+        # err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
+        # if err_msg:
+        #     logger.debug(f'force_update_one_repo_task got error during pull_repo_updates: {err_msg}')
+        #     p.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
+        #     p.save()
+        #     return
+        # else:
+        #     p.sync_success()
+        #     p.save()
+        #     stat_repo_task.delay(p.id, True)
 
     logger.debug('end force_update_one_repo_task')
 

@@ -1,5 +1,6 @@
 import random
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.serializers.json import DjangoJSONEncoder
@@ -196,14 +197,11 @@ class ProjectActiviySerializer(S.ModelSerializer):
         return '；'.join(ret)
 
     def get_commit_link(self, obj):
-        if '@github.com' in obj.project.repo_url:
-            uri = obj.project.repo_url.split(':')[1].replace('.git', '')
-            return f'https://github.com/{uri}/commit/{obj.commit_sha}'
-        elif '@gitlab.com' in obj.project.repo_url:
-            uri = obj.project.repo_url.split(':')[1].replace('.git', '')
-            return f'https://gitlab.com/{uri}/-/commit/{obj.commit_sha}'
-        else:
-            return '#'
+        for url_patt, host in settings.PROJECT_REPO_URL_MAP.items():
+            if url_patt in obj.project.repo_url:
+                uri = obj.project.repo_url.split(':')[1].replace('.git', '')
+            return f'{host}/{uri}/commit/{obj.commit_sha}'
+        return '#'
 
 class SimpleSerializer(S.ModelSerializer):
     recent_weekly_activity = S.SerializerMethodField()
