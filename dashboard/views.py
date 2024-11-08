@@ -17,7 +17,7 @@ class Detail(GenericViewSet):
 
     @action(detail=True, methods=['get'])
     def dashboard(self, request, *args, **kwargs):
-        active_proj_cnt = Project.objects.filter(status=ACTIVE).count()
+        active_proj_cnt = Project.objects.filter(is_active=True).count()
         total_proj_cnt = Project.objects.count()
         active_dev_cnt = Developer.objects.filter(status=ACTIVE).count()
         total_dev_cnt = Developer.objects.count()

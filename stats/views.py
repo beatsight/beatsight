@@ -14,6 +14,7 @@ from django.utils.timezone import get_current_timezone
 import pandas as pd
 import duckdb
 import pygit2
+import fastparquet
 
 from beatsight.utils.pl_ext import PL_EXT
 from beatsight.utils.dt import timestamp_to_dt
@@ -230,38 +231,78 @@ def get_a_project_stat(p: Project, force=False):
     }).reset_index()
     daily_stats.columns = ['author_email', 'author_date', 'insertions', 'deletions', 'daily_commit_count', 'file_exts']
     daily_stats = daily_stats[daily_stats['daily_commit_count'] > 0]
+
+    daily_stats['insertions'] = daily_stats['insertions'].astype('int32')
+    daily_stats['deletions'] = daily_stats['deletions'].astype('int32')
+    daily_stats['daily_commit_count'] = daily_stats['daily_commit_count'].astype('int32')
     daily_stats['project'] = p.name
 
+    save_daily_commits_parq(daily_stats, p, replace=replace)
+    create_daily_commits_view()
+
     daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
-    create_author_daily_commits_table(db=daily_commits_db)
-    if replace:
-        delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'",
-                                      db=daily_commits_db)
-    save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append", db=daily_commits_db)
+    # create_author_daily_commits_table(db=daily_commits_db)
+    # if replace:
+    #     delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'",
+    #                                   db=daily_commits_db)
+    # save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append", db=daily_commits_db)
 
     # calculate authors' activities, most used languages, contributions
     emails  = daily_stats['author_email'].unique().tolist()
     calculate_authors_data(emails, daily_commits_db, p)
 
-def create_author_daily_commits_table(db):
-    with duckdb.connect(db) as con:
-        table_exists = con.execute(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'author_daily_commits'"
-        ).fetchone()[0] > 0
-        if not table_exists:
-            con.execute(
-                """
-                CREATE TABLE author_daily_commits (
-                author_email VARCHAR,
-                author_date DATE,
-                insertions INT32,
-                deletions INT32,
-                daily_commit_count INT32,
-                file_exts VARCHAR[],
-                project VARCHAR
-                );
-                """
-            )
+# def create_author_daily_commits_table(db):
+#     with duckdb.connect(db) as con:
+#         table_exists = con.execute(
+#             "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'author_daily_commits'"
+#         ).fetchone()[0] > 0
+#         if not table_exists:
+#             con.execute(
+#                 """
+#                 CREATE TABLE author_daily_commits (
+#                 author_email VARCHAR,
+#                 author_date DATE,
+#                 insertions INT32,
+#                 deletions INT32,
+#                 daily_commit_count INT32,
+#                 file_exts VARCHAR[],
+#                 project VARCHAR
+#                 );
+#                 """
+#             )
+
+def save_daily_commits_parq(df, proj, replace=False):
+    parq = os.path.join(settings.STAT_DB_DIR, "daily_commits.parq", f"{proj.name}.parquet")
+
+    if replace:
+        try:
+            os.remove(parq)
+        except FileNotFoundError:
+            ...
+
+        with duckdb.connect() as con:
+            con.sql(f"COPY (select * from df) TO '{parq}' (FORMAT 'parquet')")
+    else:
+        # Read existing data from the Parquet file
+        with duckdb.connect() as con:
+            existing_df = con.execute(f"SELECT * FROM '{parq}'").fetchdf()
+            existing_df['author_date'] = existing_df['author_date'].dt.date
+
+            # Append the new data to the existing DataFrame
+            combined_df = pd.concat([df, existing_df], ignore_index=True)
+
+            # Write the combined DataFrame back to the Parquet file
+            con.sql(f"COPY (SELECT * FROM combined_df) TO '{parq}' (FORMAT 'parquet')")
+
+def create_daily_commits_view():
+    db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
+    if os.path.exists(db):
+        return
+
+    parqs = os.path.join(settings.STAT_DB_DIR, "daily_commits.parq", "*.parquet")
+    with duckdb.connect() as con:
+        sql = f"CREATE VIEW author_daily_commits AS SELECT * FROM read_parquet('{parqs}', union_by_name = true)"
+        con.sql(sql)
 
 def gen_whole_history_df(p, db, replace=False):
     repo = pygit2.Repository(p.repo_path)
