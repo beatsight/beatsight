@@ -4,7 +4,7 @@ import sys
 import duckdb
 
 # Directory name to create
-base_dir = '/beatsight-data/stats'
+base_dir = '/data/stats'
 dir_name = f'{base_dir}/daily_commits.parq'
 daily_commits = f'{base_dir}/daily_commits'
 
