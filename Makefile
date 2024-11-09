@@ -3,6 +3,9 @@ REPOSTAT=/Users/xiez/dev/beatsight/vendor/repostat/
 run:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py runserver 0.0.0.0:8081
 
+profileserver:
+	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py runprofileserver 0.0.0.0:8081  --use-cprofile --prof-path=.
+
 css:
 	npx tailwindcss -i ./static-local/assets/css/input.css -o ./static-local/assets/css/output.css --watch
 

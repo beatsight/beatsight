@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'compressor',
+    'django_extensions',
 
     'core.apps.CoreConfig',
     'projects.apps.ProjectsConfig',

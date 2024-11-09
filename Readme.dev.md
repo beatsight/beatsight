@@ -18,3 +18,12 @@ https://develop.sentry.dev/self-hosted/releases/
 
 
 
+## Profilling
+
+https://www.turing.com/kb/python-code-with-cprofile#cprofile-visualization-in-gui
+
+```
+make profileserver
+
+$ snakeviz program.prof
+```
