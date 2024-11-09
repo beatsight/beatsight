@@ -9,7 +9,7 @@ import sys
 def remove_unused(source_dir):
     ...
 
-ignore_list = ['manage.py']
+ignore_list = ['manage.py', 'migrate_daily_commit.py']
 
 def compile_py3(source_dir):
     g = os.walk(source_dir)
@@ -17,6 +17,7 @@ def compile_py3(source_dir):
     for path, d, filelist in g:
         for filename in filelist:
             if filename in ignore_list:
+                print(f'ignore {filename}')
                 continue
 
             if os.path.splitext(filename)[-1] == '.py':
