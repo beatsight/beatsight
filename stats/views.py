@@ -241,11 +241,6 @@ def get_a_project_stat(p: Project, force=False):
     create_daily_commits_view()
 
     daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
-    # create_author_daily_commits_table(db=daily_commits_db)
-    # if replace:
-    #     delete_dataframes_from_duckdb("author_daily_commits", f"project='{p.name}'",
-    #                                   db=daily_commits_db)
-    # save_dataframe_to_duckdb(daily_stats, "author_daily_commits", "append", db=daily_commits_db)
 
     # calculate authors' activities, most used languages, contributions
     emails  = daily_stats['author_email'].unique().tolist()
@@ -280,19 +275,23 @@ def save_daily_commits_parq(df, proj, replace=False):
         except FileNotFoundError:
             ...
 
-        with duckdb.connect() as con:
-            con.sql(f"COPY (select * from df) TO '{parq}' (FORMAT 'parquet')")
-    else:
-        # Read existing data from the Parquet file
-        with duckdb.connect() as con:
-            existing_df = con.execute(f"SELECT * FROM '{parq}'").fetchdf()
-            existing_df['author_date'] = existing_df['author_date'].dt.date
+    with duckdb.connect() as con:
+        con.sql(f"COPY (select * from df) TO '{parq}' (FORMAT 'parquet')")
+    # else:
+    #     # Read existing data from the Parquet file
+    #     with duckdb.connect() as con:
+    #         existing_df = con.execute(f"SELECT * FROM '{parq}'").fetchdf()
+    #         print('existing_df')
+    #         print(existing_df)
+    #         existing_df['author_date'] = existing_df['author_date'].dt.date
 
-            # Append the new data to the existing DataFrame
-            combined_df = pd.concat([df, existing_df], ignore_index=True)
+    #         # Append the new data to the existing DataFrame
+    #         combined_df = pd.concat([df, existing_df], ignore_index=True)
+    #         print('combined_df')
+    #         print(combined_df)
 
-            # Write the combined DataFrame back to the Parquet file
-            con.sql(f"COPY (SELECT * FROM combined_df) TO '{parq}' (FORMAT 'parquet')")
+    #         # Write the combined DataFrame back to the Parquet file
+    #         con.sql(f"COPY (SELECT * FROM combined_df) TO '{parq}' (FORMAT 'parquet')")
 
 def create_daily_commits_view():
     db = os.path.join(settings.STAT_DB_DIR, "daily_commits")

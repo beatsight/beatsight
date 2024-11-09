@@ -107,7 +107,8 @@ def force_update_one_repo_task(proj_id):
         return
 
     if not os.path.exists(p.repo_path):  # 初始化时异常，导致未获取到项目，需要重新获取
-        local_path = full_clone_repo_with_branch(p.repo_url, p.name, p.repo_branch)
+        name = f"{proj_id}-{p.name}"
+        local_path = full_clone_repo_with_branch(p.repo_url, name, p.repo_branch)
         p.repo_path = local_path
         p.sync_success()
         p.save()
