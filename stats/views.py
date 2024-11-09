@@ -217,8 +217,8 @@ def get_a_project_stat(p: Project, force=False):
     # save user daily commits count df
     # should be calculated in local timezones
     df = repo.whole_history_df
-    df['author_date'] = pd.to_datetime(df['author_timestamp'], unit='s', utc=True) + \
-        pd.TimedeltaIndex(df['author_tz_offset'], unit='m')
+    df['author_date'] = pd.to_datetime(df['author_timestamp'], unit='s', utc=True) + pd.to_timedelta(df['author_tz_offset'], unit='m')
+
     df['author_date'] = df['author_date'].dt.date
 
     # Group by author_email and date, then calculate the sum of insertions and deletions
@@ -336,7 +336,6 @@ def gen_whole_history_df(p, db, replace=False):
                   deletions INTEGER,
                   corrected_insertions INTEGER,
                   corrected_deletions INTEGER,
-                  details TEXT,
                   file_exts VARCHAR[]
                 )
                 """
@@ -344,9 +343,9 @@ def gen_whole_history_df(p, db, replace=False):
 
     last_seen_commit = None
     with duckdb.connect(db) as con:
-        last_row = con.execute("SELECT * FROM gitlog ORDER BY id DESC LIMIT 1").fetchone()
-        if last_row:
-            last_seen_commit = last_row[1]
+        commit_sha_df = con.sql("SELECT commit_sha FROM gitlog").df()
+        if not commit_sha_df.empty:
+            last_seen_commit = commit_sha_df['commit_sha'].iloc[-1]
 
     if last_seen_commit and not replace:
         last_seen_commit_obj = repo.get(last_seen_commit)
@@ -392,11 +391,15 @@ def gen_whole_history_df(p, db, replace=False):
         df['author_name'] = pd.Categorical(df['author_name'])
         df['author_email'] = pd.Categorical(df['author_email'])
         with duckdb.connect(db) as con:
-            df.to_sql("gitlog", con, if_exists='append', index=False)
+            con.execute(
+                """INSERT INTO gitlog (
+                commit_sha, is_merge_commit, author_name, author_email, author_tz_offset, author_timestamp,
+                author_datetime, insertions, deletions, corrected_insertions, corrected_deletions, file_exts
+                ) SELECT * FROM df"""
+            )
 
-    query = "SELECT * FROM 'gitlog'"
     with duckdb.connect(db) as con:
-        df = con.sql(query).df()
+        df = con.sql("SELECT * FROM 'gitlog'").df()
         assert not df.empty, f"gitlog is empty {db}"
         return df
 
