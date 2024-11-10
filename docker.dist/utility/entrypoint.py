@@ -28,6 +28,9 @@ def main(argv):
         check_call("supervisord -c /etc/supervisor/supervisord.conf", shell=True)
         time.sleep(5)
         check_call("tail -f /home/beatsight/logs/supervisor/*.log /home/beatsight/logs/nginx/*.log /home/beatsight/logs/beatsight/*.log | grep  -v ping", shell=True)
+    elif argv[1] == 'sudo':
+        command = ' '.join(argv[2:])  # Join all arguments after the first
+        check_call(f"{command}", shell=True)
     else:
         # Run the command provided as the second argument
         command = ' '.join(argv[1:])  # Join all arguments after the first
