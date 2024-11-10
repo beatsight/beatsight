@@ -267,7 +267,11 @@ def get_a_project_stat(p: Project, force=False):
 #             )
 
 def save_daily_commits_parq(df, proj, replace=False):
-    parq = os.path.join(settings.STAT_DB_DIR, "daily_commits.parq", f"{proj.name}.parquet")
+    parq_dir = os.path.join(settings.STAT_DB_DIR, "daily_commits.parq")
+    if not os.path.exists(parq_dir):
+        os.makedirs(parq_dir)
+
+    parq = os.path.join(parq_dir, f"{proj.name}.parquet")
 
     if replace:
         try:

@@ -53,6 +53,9 @@ def chown_data_dir():
     # Define the directories to check
     directories = ['/data/repos', '/data/stats', '/data/temp-repos']
     for directory in directories:
+        if not os.path.isdir(directory):
+            continue
+
         try:
             # Get the current owner of the directory
             owner = pwd.getpwuid(os.stat(directory).st_uid).pw_name
