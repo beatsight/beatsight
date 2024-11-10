@@ -196,7 +196,7 @@ CSRF_TRUSTED_ORIGINS = [
 # CORS_ALLOWED_ORIGINS = ['http://localhost:4200']
 
 # ###### custsom settings
-SERVER_VERSION = '1.2.10'
+SERVER_VERSION = '1.3.0'
 CORE_SERVICE = 'localhost:50051'
 
 LOGIN_REDIRECT_URL = '/dashboard'
