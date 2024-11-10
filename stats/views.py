@@ -303,7 +303,7 @@ def create_daily_commits_view():
         return
 
     parqs = os.path.join(settings.STAT_DB_DIR, "daily_commits.parq", "*.parquet")
-    with duckdb.connect() as con:
+    with duckdb.connect(db) as con:
         sql = f"CREATE VIEW author_daily_commits AS SELECT * FROM read_parquet('{parqs}', union_by_name = true)"
         con.sql(sql)
 
