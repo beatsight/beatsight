@@ -200,7 +200,7 @@ class ProjectActiviySerializer(S.ModelSerializer):
         for url_patt, host in settings.PROJECT_REPO_URL_MAP.items():
             if url_patt in obj.project.repo_url:
                 uri = obj.project.repo_url.split(':')[1].replace('.git', '')
-            return f'{host}/{uri}/commit/{obj.commit_sha}'
+                return f'{host}/{uri}/commit/{obj.commit_sha}'
         return '#'
 
 class SimpleSerializer(S.ModelSerializer):
