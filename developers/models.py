@@ -223,7 +223,7 @@ class DetailSerializer(SimpleSerializer):
 
     def get_contribution(self, obj):
         ret = []
-        for e in DeveloperContribution.objects.filter(developer=obj):
+        for e in DeveloperContribution.objects.filter(developer=obj).order_by('-commits_count'):
             serializer = DeveloperContributionSerializer(e)
             ret.append(serializer.data)
         return ret

@@ -43,3 +43,17 @@ def calculate_rank(total_commits, total_repos, active_days_ratio, total_modifica
     level = LEVELS[THRESHOLDS.index(next(t for t in THRESHOLDS if rank * 100 <= t))]
 
     return (level, rank * 100)
+
+def calculate_calendar_level(cnt, fac=1):
+    if cnt == 0:
+        level = 0
+    if cnt >= 1 and cnt < 3 * fac:
+        level = 1
+    if cnt >= 3 * fac and cnt < 5 * fac:
+        level = 2
+    if cnt >= 5 * fac and cnt < 8 * fac:
+        level = 3
+    if cnt >= 8 * fac:
+        level = 4
+
+    return level

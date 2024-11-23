@@ -16,7 +16,7 @@ from projects.models import ProjectActivity, ProjectActivitySerializer
 from beatsight.utils.response import ok
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
-
+from .utils import calculate_calendar_level
 
 # def index(request):
 #     """list all developers"""
@@ -184,16 +184,7 @@ def contrib_calendar(request, email):
     data = []
     for date_str, val in res.items():
         cnt = len(val)
-        level = 4
-
-        if cnt == 0:
-            level = 0
-        if cnt >= 1 and cnt < 2:
-            level = 1
-        if cnt >= 2 and cnt < 3:
-            level = 2
-        if cnt >= 3 and cnt < 5:
-            level = 3
+        level = calculate_calendar_level(cnt)
 
         data.append({
             'date': date_str,

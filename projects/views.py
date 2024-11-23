@@ -29,6 +29,7 @@ from beatsight.utils.response import ok, client_error, server_error
 from beatsight.pagination import CustomPagination
 from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist, update_remote_url
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
+from developers.utils import calculate_calendar_level
 
 from .models import Project, SimpleSerializer, DetailSerializer, ProjectActivity, ProjectActivitySerializer
 from .tasks import init_repo_task, switch_repo_branch_task, cleanup_after_repo_remove_task, force_update_one_repo_task
@@ -278,17 +279,8 @@ class Detail(GenericViewSet):
         data = []
         for date_str, val in res.items():
             cnt = len(val)
-            level = 4
-     
-            if cnt == 0:
-                level = 0
-            if cnt >= 1 and cnt < 3:
-                level = 1
-            if cnt >= 3 and cnt < 5:
-                level = 2
-            if cnt >= 5 and cnt < 7:
-                level = 3
-     
+            level = calculate_calendar_level(cnt, 2)
+
             data.append({
                 'date': date_str,
                 'count': cnt,
