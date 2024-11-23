@@ -30,7 +30,7 @@ from beatsight.pagination import CustomPagination
 from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist, update_remote_url
 from developers.models import DeveloperContribution, DeveloperContributionSerializer
 
-from .models import Project, SimpleSerializer, DetailSerializer, ProjectActiviy, ProjectActiviySerializer
+from .models import Project, SimpleSerializer, DetailSerializer, ProjectActivity, ProjectActivitySerializer
 from .tasks import init_repo_task, switch_repo_branch_task, cleanup_after_repo_remove_task, force_update_one_repo_task
 
 logger = logging.getLogger(settings.LOGNAME)
@@ -267,7 +267,7 @@ class Detail(GenericViewSet):
             res[date_str] = []
             current_date += datetime.timedelta(days=1)
      
-        for e in ProjectActiviy.objects.filter(
+        for e in ProjectActivity.objects.filter(
                 project=p,
                 author_datetime__gte=start_date,
                 author_datetime__lt=end_date + datetime.timedelta(days=1)
@@ -300,7 +300,7 @@ class Detail(GenericViewSet):
     def activities(self, request, *args, **kwargs):
         p = self.get_object()
 
-        qs = ProjectActiviy.objects.filter(project=p).order_by(
+        qs = ProjectActivity.objects.filter(project=p).order_by(
             '-author_datetime'
         )
      
@@ -326,7 +326,7 @@ class Detail(GenericViewSet):
      
         pnp = CustomPagination()
         page = pnp.paginate_queryset(qs, request)
-        s = ProjectActiviySerializer(page, many=True)
+        s = ProjectActivitySerializer(page, many=True)
      
         res = defaultdict(list)
         for e in s.data:
@@ -344,8 +344,8 @@ class Detail(GenericViewSet):
         
 
 class ActivityList(generics.ListAPIView):
-    queryset = ProjectActiviy.objects.all()
-    serializer_class = ProjectActiviySerializer
+    queryset = ProjectActivity.objects.all()
+    serializer_class = ProjectActivitySerializer
     # pagination_class = PageNumberPagination
     permission_classes = [IsAuthenticated]
 
@@ -364,5 +364,5 @@ class ActivityList(generics.ListAPIView):
             qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
 
         qs = qs.order_by('-author_datetime')
-
+        print(str(qs.query))
         return qs

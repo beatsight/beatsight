@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from beatsight.utils.response import ok
-from projects.models import Project, ProjectActiviy, ProjectActiviySerializer
+from projects.models import Project
 from developers.models import Developer
 from beatsight.consts import ACTIVE, INACTIVE
 

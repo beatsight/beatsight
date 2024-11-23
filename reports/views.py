@@ -9,7 +9,7 @@ from django.utils.timezone import localtime
 from rest_framework.decorators import api_view
 import pandas as pd
 
-from projects.models import Project, ProjectActiviy
+from projects.models import Project, ProjectActivity
 from developers.models import Developer
 from beatsight.utils.response import ok, client_error, server_error
 
@@ -30,7 +30,7 @@ def projects(request):
         except Project.DoesNotExist:
             return client_error(f"{name} 不存在")
 
-    qs = ProjectActiviy.objects.filter(project__in=projs)
+    qs = ProjectActivity.objects.filter(project__in=projs)
 
     start_date = request.GET.get('startDate')
     end_date = request.GET.get('endDate')
@@ -174,7 +174,7 @@ def export_projects(request):
         except Project.DoesNotExist:
             return client_error(f"{name} 不存在")
 
-    qs = ProjectActiviy.objects.filter(project__in=projs)
+    qs = ProjectActivity.objects.filter(project__in=projs)
 
     start_date_str = request.GET['startDate']
     end_date_str = request.GET['endDate']
@@ -287,7 +287,7 @@ def developers(request):
         except Developer.DoesNotExist:
             return client_error(f"{email} 不存在")
 
-    qs = ProjectActiviy.objects.filter(author_email__in=emails)
+    qs = ProjectActivity.objects.filter(author_email__in=emails)
 
     start_date = request.GET.get('startDate')
     end_date = request.GET.get('endDate')
@@ -419,7 +419,7 @@ def export_developers(request):
         except Developer.DoesNotExist:
             return client_error(f"{email} 不存在")
 
-    qs = ProjectActiviy.objects.filter(author_email__in=emails)
+    qs = ProjectActivity.objects.filter(author_email__in=emails)
 
     start_date_str = request.GET['startDate']
     end_date_str = request.GET['endDate']

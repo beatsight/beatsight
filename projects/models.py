@@ -115,7 +115,7 @@ class ProjectLanguage(TimestampedModel):
         return f"{self.project.name} - {self.language.name}"
 
 
-class ProjectActiviy(models.Model):
+class ProjectActivity(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     commit_sha = models.CharField(max_length=50)
     commit_message = models.TextField(default='')
@@ -156,14 +156,14 @@ class ProjectLanguageSerializer(S.ModelSerializer):
             return red, green, blue
         return d['rgb']
 
-class ProjectActiviySerializer(S.ModelSerializer):
+class ProjectActivitySerializer(S.ModelSerializer):
     project_id = S.ReadOnlyField(source='project.id')
     project_name = S.ReadOnlyField(source='project.name')
     details_str = S.SerializerMethodField()
     commit_link = S.SerializerMethodField()
 
     class Meta:
-        model = ProjectActiviy
+        model = ProjectActivity
         exclude = []
 
     def get_details_str(self, obj):

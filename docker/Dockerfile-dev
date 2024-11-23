@@ -1,4 +1,4 @@
-FROM python:3.9.6-slim-buster
+FROM python:3.10-slim-bookworm
 MAINTAINER xiez1989@gmail.com
 
 ENV PYTHONUNBUFFERED 1
@@ -16,6 +16,7 @@ COPY requirements.txt requirements.txt
 COPY requirements-dev.txt requirements-dev.txt
 
 RUN pip install --ignore-installed -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements-dev.txt
+#RUN pip install --ignore-installed -r requirements-dev.txt
 
 #RUN mkdir vendor
 #COPY vendor/repostat/requirements.txt vendor/requirements.txt

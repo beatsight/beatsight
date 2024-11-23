@@ -97,4 +97,7 @@ test.dist:
 run.dist:
 	docker run -it --rm -v /Users/xiez/dev/beatsight-lic/license_combined.json:/home/ubuntu/beatsight/core-serv/license.json -p 8080:80 $(IMAGE_NAME):$(VERSION) prod
 
+psql:
+	docker exec -it beatsight-postgres psql -U postgres
+
 .PHONY: docker.dist

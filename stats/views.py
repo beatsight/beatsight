@@ -18,7 +18,7 @@ import fastparquet
 
 from beatsight.utils.pl_ext import PL_EXT
 from beatsight.utils.dt import timestamp_to_dt
-from projects.models import Project, Language, ProjectLanguage, ProjectActiviy
+from projects.models import Project, Language, ProjectLanguage, ProjectActivity
 from developers.models import (
     Developer, DeveloperLanguage, DeveloperContribution, DeveloperContributionSerializer,
     DeveloperActivity
@@ -315,7 +315,7 @@ def gen_whole_history_df(p, db, replace=False):
             os.remove(db)
         except FileNotFoundError:
             ...
-        ProjectActiviy.objects.filter(project=p).delete()
+        ProjectActivity.objects.filter(project=p).delete()
 
     with duckdb.connect(db) as con:
         table_exists = con.execute(
@@ -371,7 +371,7 @@ def gen_whole_history_df(p, db, replace=False):
             e = gen_commit_record(repo, commit, p.get_ignore_list())
             if not e['is_merge_commit']:
                 author_datetime = timestamp_to_dt(e['author_timestamp'], e['author_tz_offset'])
-                activities.append(ProjectActiviy(
+                activities.append(ProjectActivity(
                     project=p,
                     commit_sha=e['commit_sha'],
                     commit_message=e['commit_msg'].strip(),
@@ -389,7 +389,7 @@ def gen_whole_history_df(p, db, replace=False):
             del e['details']
             records.append(e)
 
-        ProjectActiviy.objects.bulk_create(activities, batch_size=999, ignore_conflicts=True)
+        ProjectActivity.objects.bulk_create(activities, batch_size=999, ignore_conflicts=True)
 
         df = pd.DataFrame(records)
         df['author_name'] = pd.Categorical(df['author_name'])

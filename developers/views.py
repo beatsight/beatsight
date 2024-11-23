@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
 
 from beatsight.pagination import CustomPagination
-from projects.models import ProjectActiviy, ProjectActiviySerializer
+from projects.models import ProjectActivity, ProjectActivitySerializer
 from beatsight.utils.response import ok
 
 from .models import Developer, SimpleSerializer, DetailSerializer, DeveloperContribution, DeveloperContributionSerializer
@@ -105,7 +105,7 @@ def contributions(request, email):
 def activities(request, email):
     d = get_obj(email)
 
-    qs = ProjectActiviy.objects.filter(author_email=email).order_by(
+    qs = ProjectActivity.objects.filter(author_email=email).order_by(
         '-author_datetime'
     )
 
@@ -133,7 +133,7 @@ def activities(request, email):
 
     pnp = CustomPagination()
     page = pnp.paginate_queryset(qs, request)
-    s = ProjectActiviySerializer(page, many=True)
+    s = ProjectActivitySerializer(page, many=True)
 
     res = defaultdict(list)
     for e in s.data:
@@ -173,7 +173,7 @@ def contrib_calendar(request, email):
         res[date_str] = []
         current_date += datetime.timedelta(days=1)
 
-    for e in ProjectActiviy.objects.filter(
+    for e in ProjectActivity.objects.filter(
             author_email=email,
             author_datetime__gte=start_date,
             author_datetime__lt=end_date + datetime.timedelta(days=1)
