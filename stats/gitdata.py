@@ -62,7 +62,8 @@ def gen_commit_record(repo, commit, ignore_patterns=[]):
     details = {
         'A': [],
         'D': [],
-        'M': []
+        'M': [],
+        'R': [],
     }
     file_exts = set()
     if len(commit.parents) == 0:  # initial commit
@@ -92,13 +93,13 @@ def gen_commit_record(repo, commit, ignore_patterns=[]):
                 'insertions': added_lines,
                 'deletions': deleted_lines,
             })
-            if patch.delta.new_file.path != patch.delta.old_file.path:
-                print(f'(was {patch.delta.old_file.path})')
-                assert False
             file_exts.add(get_file_extension(patch.delta.new_file.path))
+
     elif len(commit.parents) == 1:
         parent_commit = commit.parents[0]
         diff = repo.diff(parent_commit, commit)
+        diff.find_similar()
+
         st = diff.stats
         insertions, deletions = st.insertions, st.deletions
         corrected_insertions, corrected_deletions = st.insertions, st.deletions
@@ -119,14 +120,19 @@ def gen_commit_record(repo, commit, ignore_patterns=[]):
                 corrected_deletions -= deleted_lines
 
             op = patch.delta.status_char()
-            details[op].append({
-                'file_path': patch.delta.new_file.path,
-                'insertions': added_lines,
-                'deletions': deleted_lines,
-            })
-            if patch.delta.new_file.path != patch.delta.old_file.path:
-                print(f'(was {patch.delta.old_file.path})')
-                assert False
+            if op == 'R':
+                details[op].append({
+                    'old_file_path': patch.delta.old_file.path,
+                    'file_path': patch.delta.new_file.path,
+                    'insertions': added_lines,
+                    'deletions': deleted_lines,
+                })
+            else:
+                details[op].append({
+                    'file_path': patch.delta.new_file.path,
+                    'insertions': added_lines,
+                    'deletions': deleted_lines,
+                })
             file_exts.add(get_file_extension(patch.delta.new_file.path))
 
     # case len(commit.parents) > 1 corresponds to a merge commit

@@ -180,6 +180,8 @@ class ProjectActivitySerializer(S.ModelSerializer):
                 action = '修改了'
             elif k == 'D':
                 action = '删除了'
+            elif k == 'R':
+                action = '重命名了'
             else:
                 assert False, 'invalid key'
 
@@ -189,10 +191,15 @@ class ProjectActivitySerializer(S.ModelSerializer):
                 else:
                     ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
             elif isinstance(v[0], dict):
-                if len(v) == 1:
-                    ret.append(f"{action} {v[0]['file_path']}")
+                if k == 'R':
+                    val = v[0]['old_file_path'] + ' -> ' + v[0]['file_path']
                 else:
-                    ret.append(f"{action} {v[0]['file_path']} 等 {len(v)} 个文件")
+                    val = v[0]['file_path']
+
+                if len(v) == 1:
+                    ret.append(f"{action} {val}")
+                else:
+                    ret.append(f"{action} {val} 等 {len(v)} 个文件")
             else:
                 assert False, 'invalid value type'
 
