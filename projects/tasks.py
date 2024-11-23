@@ -51,6 +51,10 @@ def switch_repo_branch_task(proj_id, repo_branch):
     except Project.DoesNotExist:
         return
 
+    if not proj.is_stating():
+        proj.start_stat()
+        proj.save()
+
     err_msg, res = switch_repo_branch(proj.repo_path, repo_branch)
     proj.refresh_from_db()
     if err_msg:
