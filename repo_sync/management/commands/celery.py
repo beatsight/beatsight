@@ -1,3 +1,4 @@
+import time
 import shlex
 import subprocess
 
@@ -6,7 +7,7 @@ from django.utils import autoreload
 
 
 def restart_celery():
-    cmd = 'pkill celery'
+    cmd = 'pkill -f "python -m celery -A beatsight worker"'
     subprocess.call(shlex.split(cmd))
     cmd = 'python -m celery -A beatsight worker --loglevel=info'
     subprocess.call(shlex.split(cmd))

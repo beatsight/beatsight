@@ -5,6 +5,7 @@ import datetime as dt
 from datetime import datetime
 from collections import defaultdict
 from functools import reduce
+import logging
 
 from django.conf import settings
 from django.shortcuts import render
@@ -34,6 +35,8 @@ from vendor.repostat.analysis.gitrepository import GitRepository
 from .utils import save_dataframe_to_duckdb, delete_dataframes_from_duckdb, fetch_from_duckdb
 from .gitdata import gen_commit_record
 
+logger = logging.getLogger('tasks')
+
 def get_a_project_stat(p: Project, force=False):
     """Get stat data of a project."""
     replace = force
@@ -44,6 +47,7 @@ def get_a_project_stat(p: Project, force=False):
     repo = GitRepository(p.repo_path, whole_history_df=whole_history_df)
 
     # save current commit as last stat commit
+    p.refresh_from_db()
     p.last_stat_commit = p.head_commit
     p.save()
 

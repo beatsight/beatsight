@@ -52,6 +52,7 @@ def switch_repo_branch_task(proj_id, repo_branch):
         return
 
     err_msg, res = switch_repo_branch(proj.repo_path, repo_branch)
+    proj.refresh_from_db()
     if err_msg:
         proj.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
         proj.save()
@@ -76,13 +77,15 @@ def stat_repo_task(proj_id, force=False):
         proj = Project.objects.get(id=proj_id)
     except Project.DoesNotExist:
         return
-    proj.start_stat()
-    proj.save()
+
+    if not proj.is_stating():
+        proj.start_stat()
+        proj.save()
 
     log = ''
     try:
         get_a_project_stat(proj, force=force)  # may take a while
-        logging.info(f'finish stat_repo_task {proj_id}')
+        logger.info(f'finish stat_repo_task {proj_id}')
     except Exception as e:
         log = f'统计失败，错误日志：{e}'
         logger.error(f'error in stat_repo_task project: {proj.name}-{proj_id}')
@@ -106,9 +109,13 @@ def force_update_one_repo_task(proj_id):
     except Project.DoesNotExist:
         return
 
+    p.start_stat()
+    p.save()
+
     if not os.path.exists(p.repo_path):  # 初始化时异常，导致未获取到项目，需要重新获取
         name = f"{proj_id}-{p.name}"
         local_path = full_clone_repo_with_branch(p.repo_url, name, p.repo_branch)
+        p.refresh_from_db()
         p.repo_path = local_path
         p.sync_success()
         p.save()
@@ -116,6 +123,7 @@ def force_update_one_repo_task(proj_id):
     else:
         err_msg, res = rename_current_branch(p.repo_path)
         if err_msg:
+            p.refresh_from_db()
             p.sync_error(f'更新失败，错误日志：{err_msg}')
             p.save()
             return

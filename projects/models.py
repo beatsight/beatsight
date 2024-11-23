@@ -82,9 +82,11 @@ class Project(TimestampedModel):
         self.sync_status = CONN_ERROR
         self.error_log = err_msg
 
+    def is_stating(self):
+        return self.status == STATING
+
     def start_stat(self):
         self.status = STATING
-        self.save()
 
     def stat_success(self):
         self.status = STAT_SUCCESS
