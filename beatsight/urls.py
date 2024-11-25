@@ -65,3 +65,8 @@ urlpatterns = [
 
     path('stats/', include('stats.urls')),
 ]
+
+if settings.ENABLE_DEMO_ACCOUNT:
+    urlpatterns += [
+        path('accounts/demo/', views.demo),
+    ]

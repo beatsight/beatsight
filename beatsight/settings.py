@@ -205,6 +205,8 @@ ALLOWED_HOSTS = [
     '*',
 ]
 
+ENABLE_DEMO_ACCOUNT = False
+
 BEATSIGHT_DATA_DIR = '/beatsight-data'
 
 UNFOLD = {

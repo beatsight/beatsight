@@ -1,8 +1,9 @@
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, NotFound
+from django.conf import settings
 from django.http import Http404
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login
 from django.shortcuts import render, redirect
 
 from .forms import LoginForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm
@@ -24,6 +25,14 @@ def custom_exception_handler(exc, context):
         response.data = custom_response
 
     return response
+
+def demo(request):
+    user = authenticate(request, username='demo', password='demo')
+    if user is not None:
+        login(request, user)
+        return redirect(settings.LOGIN_REDIRECT_URL)
+    else:
+        raise Http404
 
 # Authentication
 class UserLoginView(LoginView):
