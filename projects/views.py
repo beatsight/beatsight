@@ -267,15 +267,17 @@ class Detail(GenericViewSet):
             date_str = current_date.strftime('%Y-%m-%d')
             res[date_str] = []
             current_date += datetime.timedelta(days=1)
-     
+
         for e in ProjectActivity.objects.filter(
                 project=p,
                 author_datetime__gte=start_date,
                 author_datetime__lt=end_date + datetime.timedelta(days=1)
         ):
             date_str = localtime(e.author_datetime).strftime('%Y-%m-%d')
+            if date_str not in res:
+                continue
             res[date_str].append(e.commit_sha)
-     
+
         data = []
         for date_str, val in res.items():
             cnt = len(val)

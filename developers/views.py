@@ -179,6 +179,8 @@ def contrib_calendar(request, email):
             author_datetime__lt=end_date + datetime.timedelta(days=1)
     ):
         date_str = localtime(e.author_datetime).strftime('%Y-%m-%d')
+        if date_str not in res:
+            continue
         res[date_str].append(e.commit_sha)
 
     data = []
