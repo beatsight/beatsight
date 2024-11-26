@@ -358,5 +358,4 @@ class ActivityList(generics.ListAPIView):
             qs = qs.filter(author_datetime__gt=start_date, author_datetime__lt=end_date)
 
         qs = qs.order_by('-author_datetime')
-        print(str(qs.query))
         return qs

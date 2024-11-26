@@ -32,7 +32,7 @@ from stats.models import (
 )
 from vendor.repostat.analysis.gitrepository import GitRepository
 
-from .utils import save_dataframe_to_duckdb, delete_dataframes_from_duckdb, fetch_from_duckdb
+from .utils import save_dataframe_to_duckdb, fetch_from_duckdb
 from .gitdata import gen_commit_record
 
 logger = logging.getLogger('tasks')

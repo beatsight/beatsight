@@ -12,7 +12,6 @@ from beatsight.utils.task_lock import lock_task, unlock_task
 from beatsight.utils.git import full_clone_repo_with_branch, switch_repo_branch, pull_repo_updates, rename_current_branch
 from beatsight import celery_app
 from stats.views import get_a_project_stat, calculate_authors_data
-from stats.utils import delete_dataframes_from_duckdb
 
 logger = logging.getLogger('tasks')
 
@@ -150,11 +149,11 @@ def force_update_one_repo_task(proj_id):
 def cleanup_after_repo_remove_task(proj_name, author_emails):
     logger.debug(f'start cleanup_after_repo_remove_task {proj_name}')
 
-    # TODO: lock daily_commits_db
+    parq_file = os.path.join(settings.STAT_DB_DIR, "daily_commits.parq", f"{proj_name}.parquet")
+    os.remove(parq_file)
+
+    logger.debug(f're-calculate authors data, {author_emails}')
     daily_commits_db = os.path.join(settings.STAT_DB_DIR, "daily_commits")
-    delete_dataframes_from_duckdb("author_daily_commits", f"project='{proj_name}'",
-                                  db=daily_commits_db)
-    print('calculate_authors_data', author_emails)
     calculate_authors_data(author_emails, daily_commits_db)
 
     for dev in Developer.objects.filter(email__in=author_emails):
