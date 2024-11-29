@@ -9,6 +9,7 @@ USER 0
 RUN apt-get update -y --fix-missing
 RUN apt-get install -y build-essential gcc
 RUN apt-get install -y git procps
+RUN apt-get install -y nano gettext
 
 WORKDIR /Users/xiez/dev/beatsight
 

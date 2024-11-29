@@ -1,0 +1,236 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-11-28 16:22+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: beatsight/forms.py:8
+msgid "Username"
+msgstr "用户名"
+
+#: beatsight/forms.py:10 beatsight/forms.py:12
+msgid "Password"
+msgstr "密码"
+
+#: beatsight/forms.py:18
+msgid "Email"
+msgstr "邮箱"
+
+#: beatsight/forms.py:24 beatsight/forms.py:35
+msgid "New Password"
+msgstr "新密码"
+
+#: beatsight/forms.py:27 beatsight/forms.py:38
+msgid "Confirm New Password"
+msgstr "确认新密码"
+
+#: beatsight/forms.py:32
+msgid "Old Password"
+msgstr "旧密码"
+
+#: projects/views.py:50
+msgid "The project address only supports SSH protocol."
+msgstr "项目地址仅支持 SSH 方式。"
+
+#: projects/views.py:56
+msgid ""
+"The provided project address cannot be found or reached. Please verify the "
+"address and try again."
+msgstr "项目地址不存在或无法访问，请检查后重试。"
+
+#: projects/views.py:58
+msgid ""
+"The specified project branch could not be found. Please verify the branch "
+"name and try again."
+msgstr "项目分支不存在，请检查后重试。"
+
+#: projects/views.py:119
+msgid "Only admins can create projects."
+msgstr "只有管理员可以创建项目。"
+
+#: projects/views.py:133
+#, python-brace-format
+msgid "The number of projects has reached the maximum limit: {max_projects}"
+msgstr "项目数量已经到达最大数量：{max_projects}"
+
+#: projects/views.py:139
+msgid ""
+"A project with that name already exists. Please verify the name and try "
+"again."
+msgstr "该项目名称已存在，请检查后重试。"
+
+#: projects/views.py:189
+msgid "Only admins can update projects."
+msgstr "只有管理员可以更新项目。"
+
+#: projects/views.py:227
+msgid "Only admins can delete projects."
+msgstr "只有管理员可以删除项目。"
+
+#: reports/views.py:22 reports/views.py:166
+msgid "names cannot be empty"
+msgstr "名称不能为空"
+
+#: reports/views.py:237 reports/views.py:501
+msgid "# of commits"
+msgstr "提交次数"
+
+#: reports/views.py:238 reports/views.py:502
+msgid "add LOC"
+msgstr "增加行数"
+
+#: reports/views.py:239 reports/views.py:503
+msgid "delete LOC"
+msgstr "删除行数"
+
+#: reports/views.py:240 reports/views.py:504
+msgid "modify LOC"
+msgstr "修改行数"
+
+#: reports/views.py:241 reports/views.py:505
+msgid "(valid) add LOC"
+msgstr "（有效）增加行数"
+
+#: reports/views.py:242 reports/views.py:506
+msgid "(valid) delete LOC"
+msgstr "（有效）删除行数"
+
+#: reports/views.py:243 reports/views.py:507
+msgid "(valid) modify LOC"
+msgstr "（有效）修改行数"
+
+#: reports/views.py:254 reports/views.py:533
+msgid "projects"
+msgstr "项目"
+
+#: reports/views.py:255 reports/views.py:532
+msgid "developers"
+msgstr "开发人员"
+
+#: reports/views.py:256 reports/views.py:534
+msgid "start date"
+msgstr "开始日期"
+
+#: reports/views.py:257 reports/views.py:535
+msgid "end date"
+msgstr "结束日期"
+
+#: reports/views.py:279 reports/views.py:411
+msgid "emails cannot be empty"
+msgstr "emails 不能为空"
+
+#: reports/views.py:289 reports/views.py:421
+#, python-brace-format
+msgid "{email} does not exist"
+msgstr "{email} 不存在"
+
+#: templates/accounts/login.html:14 templates/accounts/password_change.html:13
+#: templates/accounts/password_change_done.html:13
+#: templates/accounts/password_reset.html:13
+#: templates/accounts/password_reset_confirm.html:13
+msgid "Hi!"
+msgstr "你好！"
+
+#: templates/accounts/login.html:15
+msgid "Enter your username and password to sign in"
+msgstr "请输入账号密码"
+
+#: templates/accounts/login.html:38
+msgid "Remember me"
+msgstr "记住我"
+
+#: templates/accounts/login.html:42
+msgid "Forgot password?"
+msgstr "忘记密码？"
+
+#: templates/accounts/login.html:47 templates/accounts/password_reset.html:39
+#: templates/accounts/password_reset_complete.html:23
+#: templates/accounts/password_reset_confirm.html:39
+msgid "Sign in"
+msgstr "登录"
+
+#: templates/accounts/password_change.html:24
+msgid "Change Password"
+msgstr "修改密码"
+
+#: templates/accounts/password_change.html:37
+msgid "Change"
+msgstr "修改"
+
+#: templates/accounts/password_change_done.html:23
+#: templates/accounts/password_reset_complete.html:20
+msgid "Password Changed"
+msgstr "密码修改成功"
+
+#: templates/accounts/password_change_done.html:26
+msgid ""
+"Your password is now updated. Please sign in with your new password next "
+"time."
+msgstr "您的密码已更新。请在下一次登录时使用新密码。"
+
+#: templates/accounts/password_change_done.html:27
+msgid "Back to homepage"
+msgstr "返回首页"
+
+#: templates/accounts/password_reset.html:14
+msgid ""
+"Please enter the email you used to sign in, and we'll send you a link to "
+"reset your password."
+msgstr "请在下方输入您登录时使用的电子邮件地址，我们将向您发送重置密码链接。"
+
+#: templates/accounts/password_reset.html:24
+msgid "Forgot Password"
+msgstr "忘记密码"
+
+#: templates/accounts/password_reset.html:37
+#: templates/accounts/password_reset_confirm.html:37
+msgid "Reset"
+msgstr "重置"
+
+#: templates/accounts/password_reset.html:39
+#: templates/accounts/password_reset_confirm.html:39
+msgid "Password found?"
+msgstr "找回密码了？"
+
+#: templates/accounts/password_reset_complete.html:23
+msgid "Your password has been changed successfully."
+msgstr "您的密码已成功更改"
+
+#: templates/accounts/password_reset_confirm.html:14
+msgid ""
+"Enter your desired new password in the field below, then click the \"Reset "
+"Password\" button to confirm your changes."
+msgstr "请在下面输入您想要的新密码，然后单击“重置密码”按钮以确认您的更改。"
+
+#: templates/accounts/password_reset_confirm.html:24
+msgid "Reset Password"
+msgstr "重置密码"
+
+#: templates/accounts/password_reset_done.html:22
+msgid "Email Sent"
+msgstr "邮件已发送"
+
+#: templates/accounts/password_reset_done.html:26
+msgid ""
+"An email has been sent to your email address. Please click the link and "
+"reset your password."
+msgstr "一封电子邮件已发送到您的邮箱地址。请点击链接并重置您的密码。"
+
+#: templates/unfold/helpers/site_logo.html:5
+#: templates/unfold/helpers/site_logo.html:7
+#: templates/unfold/helpers/site_logo.html:9
+msgid "Home"
+msgstr "首页"

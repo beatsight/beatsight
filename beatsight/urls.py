@@ -20,9 +20,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework import routers
+# from django.views.i18n import JavaScriptCatalog
+# from rest_framework import routers
 
-from projects import views as proj_views
+# from projects import views as proj_views
 
 # router = routers.DefaultRouter()
 # router.register(r'projects', views.ProjViewSet)
@@ -62,6 +63,11 @@ urlpatterns = [
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),
     # path("accounts/", include("django.contrib.auth.urls")),
+
+    # path('accounts/set_language/', views.set_language, name='set_language'),
+
+    path("accounts/i18n/", include("django.conf.urls.i18n")),
+    # path("accounts/jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
 
     path('stats/', include('stats.urls')),
 ]

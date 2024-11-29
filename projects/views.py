@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.utils.timezone import make_aware, localtime
 from rest_framework import permissions, viewsets
 from rest_framework.viewsets import GenericViewSet
@@ -46,15 +47,15 @@ def clean_project_fields(req_data, test_conn=False):
     repo_branch = req_data['repo_branch']
 
     if not (repo_url.startswith('ssh://') or repo_url.startswith('git@')):
-        return False, '项目地址仅支持 SSH 方式，不支持 HTTP'
+        return False, _('The project address only supports SSH protocol.')
 
     if test_conn:
         try:
             test_repo_and_branch(repo_url, name, repo_branch)
         except RepoDoesNotExist:
-            return False, '项目地址不存在或无法访问，请检查'
+            return False, _('The provided project address cannot be found or reached. Please verify the address and try again.')
         except BranchDoesNotExist:
-            return False, '项目分支不存在，请检查'
+            return False, _('The specified project branch could not be found. Please verify the branch name and try again.')
     return True, req_data
 
 class ListCreate(generics.ListCreateAPIView):
@@ -115,7 +116,7 @@ class ListCreate(generics.ListCreateAPIView):
 
     def create(self, request):
         if not request.user.is_staff:
-            return client_error("只有管理员可以创建项目")
+            return client_error(_("Only admins can create projects."))
 
         req_data = request.data
         test_conn = True if req_data.get('test_conn', 0) == 1 else False
@@ -129,13 +130,13 @@ class ListCreate(generics.ListCreateAPIView):
 
         max_projects = rpc.get_license()['max_projects']
         if Project.objects.count() >= max_projects:
-            return server_error(f'项目数量已经到达最大数量：{max_projects}')
+            return server_error(_(f'The number of projects has reached the maximum limit: {max_projects}'))
 
         data = ret
 
         name, repo_url, repo_branch = data['name'], data['repo_url'], data['repo_branch']
         if Project.objects.filter(name=name).count() > 0:
-            return client_error(f'项目名称 {name} 已存在，请检查')
+            return client_error(_('A project with that name already exists. Please verify the name and try again.'))
 
         p = Project(name=name, repo_url=repo_url, repo_branch=repo_branch)
         p.save()
@@ -155,7 +156,7 @@ class Detail(GenericViewSet):
         try:
             obj = Project.objects.get(name=self.kwargs['name'])
         except Project.DoesNotExist:
-            raise Http404(f"项目（{self.kwargs['name']}）不存在")
+            raise Http404(f"Project（{self.kwargs['name']}）does not exist")
         return obj
 
     def retrieve(self, request, *args, **kwargs):
@@ -185,7 +186,7 @@ class Detail(GenericViewSet):
         p = self.get_object()
 
         if not request.user.is_staff:
-            return client_error("只有管理员可以修改项目")
+            return client_error(_("Only admins can update projects."))
 
         req_data = json.loads(request.body)
         test_conn = True if req_data.get('test_conn', 0) == 1 else False
@@ -223,7 +224,7 @@ class Detail(GenericViewSet):
         p = self.get_object()
 
         if not request.user.is_staff:
-            return client_error("只有管理员可以删除项目")
+            return client_error(_("Only admins can delete projects."))
 
         proj_name = p.name
         author_emails = [dev.email for dev in p.developer_set.all()]

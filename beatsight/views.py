@@ -5,6 +5,8 @@ from django.http import Http404
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
 from django.contrib.auth import logout, authenticate, login
 from django.shortcuts import render, redirect
+from django.utils import translation
+from django.urls import reverse
 
 from .forms import LoginForm, UserPasswordResetForm, UserSetPasswordForm, UserPasswordChangeForm
 
@@ -34,6 +36,12 @@ def demo(request):
     else:
         raise Http404
 
+# def set_language(request):
+#     user_language = request.GET.get('language', 'en')
+#     translation.activate(user_language)
+#     request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+#     return redirect(request.META.get('HTTP_REFERER', '/'))
+
 # Authentication
 class UserLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -47,6 +55,9 @@ def logout_view(request):
 class UserPasswordResetView(PasswordResetView):
     template_name = 'accounts/password_reset.html'
     form_class = UserPasswordResetForm
+    extra_context = {
+        'redirect_to': '/accounts/password-reset/',
+    }
 
 class UserPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = 'accounts/password_reset_confirm.html'
@@ -55,3 +66,6 @@ class UserPasswordResetConfirmView(PasswordResetConfirmView):
 class UserPasswordChangeView(PasswordChangeView):
     template_name = 'accounts/password_change.html'
     form_class = UserPasswordChangeForm
+    extra_context = {
+        'redirect_to': '/accounts/password-change/',
+    }

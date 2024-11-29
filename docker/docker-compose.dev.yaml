@@ -35,7 +35,7 @@ services:
     volumes:
       - repo-data:/beatsight-data
       - ..:/Users/xiez/dev/beatsight
-      # - /Users/xiez/src/seahub:/seahub
+      # - /Users/xiez/dev/beatsight-web:/Users/xiez/dev/beatsight-web
       # - /Users/xiez/dev/SICP-exercises:/sicp
       # - /Users/xiez/dev/beatsight-web:/beatsight-web
       # - /Users/xiez/dev/coreui-free-react-admin-template:/coreui-free-react-admin-template

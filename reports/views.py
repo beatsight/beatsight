@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.utils.timezone import make_aware
 from django.http import HttpResponse
 from django.utils.timezone import localtime
+from django.utils.translation import gettext as _
 from rest_framework.decorators import api_view
 import pandas as pd
 
@@ -18,7 +19,7 @@ from beatsight.utils.response import ok, client_error, server_error
 def projects(request):
     names = request.GET.get('names', '')
     if not names:
-        return client_error('names 不能为空')
+        return client_error(_('names cannot be empty'))
 
     combined = request.GET.get('combined', '1') == '1'
 
@@ -162,7 +163,7 @@ def projects(request):
 def export_projects(request):
     names = request.GET.get('names', '')
     if not names:
-        return client_error('names 不能为空')
+        return client_error(_('names cannot be empty'))
 
     combined = request.GET.get('combined', '1') == '1'
 
@@ -233,13 +234,13 @@ def export_projects(request):
                 .reset_index()
                 .sort_values(by='commit_sha_count', ascending=False)
                 .rename(columns={
-                    'commit_sha_count': '提交次数',
-                    'insertions': '增加行数',
-                    'deletions': '删除行数',
-                    'modifications': '修改行数',
-                    'corrected_insertions': '（有效）增加行数',
-                    'corrected_deletions': '（有效）删除行数',
-                    'corrected_modifications': '（有效）修改行数'
+                    'commit_sha_count': _('# of commits'),
+                    'insertions': _('add LOC'),
+                    'deletions': _('delete LOC'),
+                    'modifications': _('modify LOC'),
+                    'corrected_insertions': _('(valid) add LOC'),
+                    'corrected_deletions': _('(valid) delete LOC'),
+                    'corrected_modifications': _('(valid) modify LOC'),
                 })
             )
             proj_dfs[project] = proj_df
@@ -250,10 +251,10 @@ def export_projects(request):
 
         with pd.ExcelWriter(response, engine='xlsxwriter') as writer:
             data = {
-                '统计项目': names,
-                '开发人员': list(author_emails),
-                '开始日期': [start_date_str],
-                '结束日期': [end_date_str],
+                _('projects'): names,
+                _('developers'): list(author_emails),
+                _('start date'): [start_date_str],
+                _('end date'): [end_date_str],
             }
             max_length = max(len(names), len(author_emails))
             filled_data = {k: v + [''] * (max_length - len(v)) for k, v in data.items()}
@@ -275,7 +276,7 @@ def export_projects(request):
 def developers(request):
     emails = request.GET.get('emails', '')
     if not emails:
-        return client_error('emails 不能为空')
+        return client_error(_('emails cannot be empty'))
 
     combined = request.GET.get('combined', '1') == '1'
 
@@ -285,7 +286,7 @@ def developers(request):
         try:
             devs.append(Developer.objects.get(email=email))
         except Developer.DoesNotExist:
-            return client_error(f"{email} 不存在")
+            return client_error(_(f"{email} does not exist"))
 
     qs = ProjectActivity.objects.filter(author_email__in=emails)
 
@@ -407,7 +408,7 @@ def developers(request):
 def export_developers(request):
     emails = request.GET.get('emails', '')
     if not emails:
-        return client_error('emails 不能为空')
+        return client_error(_('emails cannot be empty'))
 
     combined = request.GET.get('combined', '1') == '1'
 
@@ -417,7 +418,7 @@ def export_developers(request):
         try:
             devs.append(Developer.objects.get(email=email))
         except Developer.DoesNotExist:
-            return client_error(f"{email} 不存在")
+            return client_error(_(f"{email} does not exist"))
 
     qs = ProjectActivity.objects.filter(author_email__in=emails)
 
@@ -497,13 +498,13 @@ def export_developers(request):
             .rename(columns={
                 # 'author_email': '开发人员',
                 # 'date': '日期',
-                'commit_sha': '提交次数',
-                'insertions': '增加行数',
-                'deletions': '删除行数',
-                'modifications': '修改行数',
-                'corrected_insertions': '（有效）增加行数',
-                'corrected_deletions': '（有效）删除行数',
-                'corrected_modifications': '（有效）修改行数'
+                'commit_sha_count': _('# of commits'),
+                'insertions': _('add LOC'),
+                'deletions': _('delete LOC'),
+                'modifications': _('modify LOC'),
+                'corrected_insertions': _('(valid) add LOC'),
+                'corrected_deletions': _('(valid) delete LOC'),
+                'corrected_modifications': _('(valid) modify LOC'),
             })
         )
 
@@ -528,10 +529,10 @@ def export_developers(request):
 
     with pd.ExcelWriter(response, engine='xlsxwriter') as writer:
         data = {
-            '开发人员': emails,
-            '统计项目': list(projects),
-            '开始日期': [start_date_str],
-            '结束日期': [end_date_str],
+            _('developers'): emails,
+            _('projects'): list(projects),
+            _('start date'): [start_date_str],
+            _('end date'): [end_date_str],
         }
         max_length = max(len(emails), len(projects))
         filled_data = {k: v + [''] * (max_length - len(v)) for k, v in data.items()}

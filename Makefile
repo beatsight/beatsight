@@ -18,6 +18,15 @@ sql:
 mig:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py migrate
 
+po:
+	python manage.py makemessages -l zh_Hans
+
+jsmsg:
+	django-admin makemessages -d djangojs -l zh_Hans --ignore 'static/*' --ignore 'tests/*' -s -e js -e jsx
+
+mo:
+	python manage.py compilemessages
+
 pull:
 	export PYTHONPATH=$(REPOSTAT):$PYTHONPATH && python manage.py pull
 
