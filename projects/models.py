@@ -11,6 +11,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers as S
 
 from beatsight.models import TimestampedModel
@@ -34,15 +35,15 @@ class LanguageSerializer(S.ModelSerializer):
 
 class Project(TimestampedModel):
     SYNC_STATUS = (
-        (INIT, '初始化'),
-        (CONN_SUCCESS, '连接成功'),
-        (CONN_ERROR, '连接失败'),
+        (INIT, _('Init')),
+        (CONN_SUCCESS, _('Conn. OK')),
+        (CONN_ERROR, 'Conn. Error'),
     )
 
     STATUS = (
-        (STATING, '统计中'),
-        (STAT_SUCCESS, '统计完成'),
-        (STAT_ERROR, '统计失败'),
+        (STATING, _('Processing')),
+        (STAT_SUCCESS, _('Stat Success')),
+        (STAT_ERROR, _('Stat Failed')),
     )
 
     name = models.CharField(max_length=200, unique=True)
@@ -182,13 +183,13 @@ class ProjectActivitySerializer(S.ModelSerializer):
                 continue
 
             if k == 'A':
-                action = '添加了'
+                action = _('Added')
             elif k == 'M':
-                action = '修改了'
+                action = _('Modified')
             elif k == 'D':
-                action = '删除了'
+                action = ('Deleted')
             elif k == 'R':
-                action = '重命名了'
+                action = _('Renamed')
             else:
                 assert False, 'invalid key'
 
@@ -196,7 +197,9 @@ class ProjectActivitySerializer(S.ModelSerializer):
                 if len(v) == 1:
                     ret.append(f'{action} {v[0]}')
                 else:
-                    ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
+                    # ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
+                    # ret.append(f'{action} {v[0]} and {len(v)} other files')
+                    ret.append(_('{} {} and {} other files').format(action, v[0], len(v)))
             elif isinstance(v[0], dict):
                 if k == 'R':
                     val = v[0]['old_file_path'] + ' -> ' + v[0]['file_path']
@@ -206,11 +209,12 @@ class ProjectActivitySerializer(S.ModelSerializer):
                 if len(v) == 1:
                     ret.append(f"{action} {val}")
                 else:
-                    ret.append(f"{action} {val} 等 {len(v)} 个文件")
+                    # ret.append(f"{action} {val} and {len(v)} other files")
+                    ret.append(_('{} {} and {} other files').format(action, val, len(v)))
             else:
                 assert False, 'invalid value type'
 
-        return '；'.join(ret)
+        return '; '.join(ret)
 
     def get_commit_link(self, obj):
         for url_patt, host in settings.PROJECT_REPO_URL_MAP.items():

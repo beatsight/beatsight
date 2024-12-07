@@ -20,12 +20,12 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.163.com'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True  # Use TLS
-EMAIL_HOST_USER = 'mingdid@163.com'  # Your email address
-EMAIL_HOST_PASSWORD = 'OKAJSVIIMTDQLIAR'  # 163 SMTP 授权码
-DEFAULT_FROM_EMAIL = 'mingdid@163.com'  # Default from email address
+EMAIL_HOST_USER = 'xxx@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = 'xxyyyy'
+DEFAULT_FROM_EMAIL = 'from@gmail.com'  # Default from email address
 
 
 # Logging

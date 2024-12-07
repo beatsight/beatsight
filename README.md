@@ -65,7 +65,7 @@ To run Beatsight in development mode, follow these steps:
     python3 manage.py runserver 0.0.0.0:8081
     ```
 
-3. Install backend dependencies and run:
+3. Install frontend dependencies and run:
 
     ```
     cd beatsight-web
