@@ -25,7 +25,6 @@ from rest_framework.pagination import PageNumberPagination
 
 from stats.models import ActivityData
 from beatsight.utils import CustomJSONEncoder
-from beatsight.utils import rpc
 from beatsight.utils.response import ok, client_error, server_error
 from beatsight.pagination import CustomPagination
 from beatsight.utils.git import test_repo_and_branch, RepoDoesNotExist, BranchDoesNotExist, update_remote_url
@@ -127,10 +126,6 @@ class ListCreate(generics.ListCreateAPIView):
             return client_error(err)
         if test_conn:
             return Response({})
-
-        max_projects = rpc.get_license()['max_projects']
-        if Project.objects.count() >= max_projects:
-            return server_error(_(f'The number of projects has reached the maximum limit: {max_projects}'))
 
         data = ret
 

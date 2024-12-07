@@ -1,6 +1,4 @@
-[submodule "web"]
-	path = web
-	url = git@github.com:xiez/beatsight-web.git
 [submodule "vendor/repostat"]
 	path = vendor/repostat
-	url = git@github.com:xiez/repostat.git
+        url = git@github.com:beatsight/repostat.git
+        branch = patch
