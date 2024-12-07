@@ -1,3 +1,10 @@
+"""
+This file is part of Beatsight.
+
+Copyright (C) 2024-2025 Beatsight Ltd.
+Licensed under the GNU General Public License v3.0.
+"""
+
 import random
 
 from django.conf import settings

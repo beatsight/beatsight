@@ -1,3 +1,10 @@
+"""
+This file is part of Beatsight.
+
+Copyright (C) 2024-2025 Beatsight Ltd.
+Licensed under the GNU General Public License v3.0.
+"""
+
 PL_COLOR = {
     'Assembly': {'color': '#6E4C13',
                  'rgb': (110, 76, 19),
