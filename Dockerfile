@@ -1,6 +1,3 @@
-#-------------------- core server
-FROM beatsight-core:latest AS core-serv
-
 #-------------------- frontend dist
 FROM beatsight-web:latest AS frontend
 
@@ -24,17 +21,14 @@ ENV INSTALL_DIR="${HOME_DIR}/app"
 COPY . ${INSTALL_DIR}
 COPY docker.dist/utility/ ${BUILD_DIR}/
 
-# compile .py files
-RUN python3 ${BUILD_DIR}/compile.py --python-source=${INSTALL_DIR}
-
 #-------------------- web app
 FROM ubuntu:22.04
 
-LABEL maintainer="zhengxie@beatsight.com"
+LABEL maintainer="dev@beatsight.com"
 LABEL org.opencontainers.image.title="Beatsight"
 LABEL org.opencontainers.image.description="Beatsight runtime image"
 LABEL org.opencontainers.image.url="https://www.beatsight.com/"
-LABEL org.opencontainers.image.vendor="Beatsight LLC"
+LABEL org.opencontainers.image.vendor="Beatsight Ltd."
 LABEL org.opencontainers.image.authors="dev@beatsight.com"
 
 ENV PYTHONUNBUFFERED 1
@@ -100,8 +94,6 @@ RUN chmod 755 ${BUILD_DIR}/django-install.sh \
 
 # Copy the binary to the production image from the builder stage.
 COPY --from=backend /home/beatsight/app/ ${INSTALL_DIR}
-COPY --from=core-serv /app/server ${INSTALL_DIR}/core-serv/server
-COPY --from=core-serv /app/core.conf ${INSTALL_DIR}/core-serv/core.conf
 COPY --from=frontend /app/dist ${INSTALL_DIR}/frontend/dist
 
 RUN chown -R beatsight:beatsight ${HOME_DIR}

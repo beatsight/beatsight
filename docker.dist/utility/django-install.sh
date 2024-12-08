@@ -21,17 +21,6 @@ stdout_logfile=${LOG_DIR}/nginx/%(program_name)s.log
 stderr_logfile=${LOG_DIR}/nginx/%(program_name)s.log
 EOF
 
-# configure supervisord to start Core service
-cat > /etc/supervisor/conf.d/core.conf <<EOF
-[program:core]
-command=/home/beatsight/app/core-serv/server
-directory=/home/beatsight/app/core-serv
-user=beatsight
-stdout_logfile=${LOG_DIR}/beatsight/core.out.log
-stderr_logfile=${LOG_DIR}/beatsight/core.error.log
-redirect_stderr=true
-EOF
-
 # configure supervisord to start Web using gunicorn
 cat > /etc/supervisor/conf.d/web.conf <<EOF
 [program:web]
