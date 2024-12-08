@@ -27,5 +27,7 @@ def system_info(request):
     data.update({
         'server_version': settings.SERVER_VERSION,
         'current_projects': current_projects,
+        'max_projects': 99999,
+        'is_ee': False,
     })
     return ok(data)
