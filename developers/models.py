@@ -14,6 +14,7 @@ from collections import defaultdict
 
 from django.utils import timezone
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers as S
 import pytz
 
@@ -28,8 +29,8 @@ from .utils import calculate_rank
 
 class Developer(TimestampedModel):
     DEV_STATUS = (
-        (ACTIVE, '活跃'),
-        (INACTIVE, '不活跃')
+        (ACTIVE, _('Active')),
+        (INACTIVE, _('Inactive'))
     )
     
     name = models.CharField(max_length=200, db_index=True)
