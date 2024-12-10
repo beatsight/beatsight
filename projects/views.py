@@ -203,11 +203,21 @@ class Detail(GenericViewSet):
 
         # old_url = p.repo_url
         old_branch = p.repo_branch
-        p.desc = data['desc'].strip()
-        p.repo_branch, p.ignore_list = data['repo_branch'].strip(), data['ignore_list'].strip()
 
-        p.save()
-        p.refresh_from_db()
+        save_obj = False
+        if 'desc' in data:
+            p.desc = data['desc'].strip()
+            save_obj = True
+        if 'repo_branch' in data:
+            p.repo_branch = data['repo_branch'].strip()
+            save_obj = True
+        if 'ignore_list' in data:
+            p.ignore_list = data['ignore_list'].strip()
+            save_obj = True
+
+        if save_obj:
+            p.save()
+            p.refresh_from_db()
 
         # if p.repo_url != old_url:
         #     update_remote_url(p.repo_path, p.repo_url)
@@ -215,7 +225,7 @@ class Detail(GenericViewSet):
         if p.repo_branch != old_branch:
             switch_repo_branch_task.delay(p.id, p.repo_branch)
 
-        if data['re_stat'] is True:
+        if 're_stat' in data and data['re_stat'] is True:
             force_update_one_repo_task.delay(p.id)
 
         res = SimpleSerializer(p).data
