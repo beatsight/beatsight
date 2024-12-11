@@ -4,7 +4,11 @@
 
 Beatsight is a comprehensive project and developer activity tracking tool designed to provide clear insights into development progress and contributions. It features a GitHub-like activity calendar (heatmap) that visualizes project and developer contributions over time, offering an intuitive way to track engagement.
 
+![](https://i.imgur.com/agUmzJc.png)
+
 The platform aggregates commit records from all projects and displays them on the homepage in an easy-to-understand timeline format, highlighting contributions and progress across multiple projects. Detailed project information is provided, including programming languages used, contributors, and a complete record of commit activity.
+
+![](https://i.imgur.com/VB1Ed0B.png)
 
 For developers, Beatsight offers a detailed view of their contributions, including the programming languages they use, the projects they have contributed to, and their commit activity. The tool allows for intuitive comparisons and the export of development activity data across multiple projects and developers, including commit counts, code changes, and other key metrics, helping to analyze and understand contributions comprehensively.
 
