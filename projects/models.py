@@ -37,7 +37,7 @@ class Project(TimestampedModel):
     SYNC_STATUS = (
         (INIT, _('Init')),
         (CONN_SUCCESS, _('Conn. OK')),
-        (CONN_ERROR, 'Conn. Error'),
+        (CONN_ERROR, _('Conn. Error')),
     )
 
     STATUS = (
