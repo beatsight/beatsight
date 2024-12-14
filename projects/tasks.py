@@ -4,6 +4,7 @@ import logging
 
 from django.conf import settings
 from celery import shared_task
+from django.utils.translation import gettext as _
 
 from projects.models import Project
 from developers.models import Developer
@@ -38,7 +39,7 @@ def init_repo_task(proj_id, repo_url, name, repo_branch):
 
         stat_repo_task.delay(proj_id, True)
     except Exception as e:
-        proj.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{e}')
+        proj.sync_error(_('The project URL is inaccessible, or the branch does not exist. {error}').format(error=e))
         proj.save()
 
 @shared_task()
@@ -57,7 +58,7 @@ def switch_repo_branch_task(proj_id, repo_branch):
     err_msg, res = switch_repo_branch(proj.repo_path, repo_branch)
     proj.refresh_from_db()
     if err_msg:
-        proj.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
+        proj.sync_error(_('The project URL is inaccessible, or the branch does not exist. {error}').format(error=err_msg))
         proj.save()
         return
 
@@ -85,20 +86,20 @@ def stat_repo_task(proj_id, force=False):
         proj.start_stat()
         proj.save()
 
-    log = ''
+    err_msg = ''
     try:
         get_a_project_stat(proj, force=force)  # may take a while
         logger.info(f'finish stat_repo_task {proj_id}')
     except Exception as e:
-        log = f'统计失败，错误日志：{e}'
+        err_msg = str(e)
         logger.error(f'error in stat_repo_task project: {proj.name}-{proj_id}')
         logger.exception(e)
     finally:
         unlock_task(lock)
 
     proj = Project.objects.get(id=proj_id)
-    if log:
-        proj.stat_error(log)
+    if err_msg:
+        proj.stat_error(err_msg)
     else:
         proj.stat_success()
     proj.save()
@@ -127,7 +128,7 @@ def force_update_one_repo_task(proj_id):
         err_msg, res = rename_current_branch(p.repo_path)
         if err_msg:
             p.refresh_from_db()
-            p.sync_error(f'更新失败，错误日志：{err_msg}')
+            p.sync_error(err_msg)
             p.save()
             return
         switch_repo_branch_task.delay(p.id, p.repo_branch)
@@ -181,7 +182,7 @@ def update_repo_task():
     for p in Project.objects.exclude(sync_status=INIT):
         err_msg, res = pull_repo_updates(p.repo_path, p.repo_branch)
         if err_msg:
-            p.sync_error(f'项目地址无法访问或者分支不存在，错误日志：{err_msg}')
+            p.sync_error(_('The project URL is inaccessible, or the branch does not exist. {error}').format(error=err_msg))
             p.save()
             continue
         else:

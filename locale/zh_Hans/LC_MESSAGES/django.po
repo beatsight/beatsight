@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-08 10:45+0800\n"
+"POT-Creation-Date: 2024-12-14 21:49+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -75,7 +75,7 @@ msgstr "添加了"
 
 #: projects/models.py:188
 msgid "Modified"
-msgstr "删除了"
+msgstr "修改了"
 
 #: projects/models.py:192
 msgid "Renamed"
@@ -83,7 +83,12 @@ msgstr "重命名了"
 
 #: projects/models.py:202 projects/models.py:213
 msgid "{} {} and {} other files"
-msgstr "{} {} 等 {} 个文件"
+msgstr "{} {} 和其他 {} 个文件"
+
+#: projects/tasks.py:42 projects/tasks.py:61 projects/tasks.py:185
+#, python-brace-format
+msgid "The project URL is inaccessible, or the branch does not exist. {error}"
+msgstr "项目地址无法访问或者分支不存在。{error}"
 
 #: projects/views.py:55
 msgid "The project address only supports SSH protocol."
@@ -115,7 +120,7 @@ msgstr "该项目名称已存在，请检查后重试。"
 msgid "Only admins can update projects."
 msgstr "只有管理员可以更新项目。"
 
-#: projects/views.py:228
+#: projects/views.py:238
 msgid "Only admins can delete projects."
 msgstr "只有管理员可以删除项目。"
 
