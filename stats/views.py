@@ -39,7 +39,7 @@ from stats.models import (
 from vendor.repostat.analysis.gitrepository import GitRepository
 
 from .utils import save_dataframe_to_duckdb, fetch_from_duckdb
-from .gitdata import gen_commit_record
+from .gitlog import gen_commit_record
 
 logger = logging.getLogger('tasks')
 
@@ -47,10 +47,13 @@ def get_a_project_stat(p: Project, force=False):
     """Get stat data of a project."""
     replace = force
 
+    logger.debug('start get_a_project_stat')
     # get whole/partial repo history
     db = os.path.join(settings.STAT_DB_DIR, f"{p.name}_log")
     whole_history_df = gen_whole_history_df(p, db, replace=replace)
     repo = GitRepository(p.repo_path, whole_history_df=whole_history_df)
+
+    logger.debug('finish gen_whole_history')
 
     # save current commit as last stat commit
     p.last_stat_commit = p.head_commit
@@ -83,6 +86,8 @@ def get_a_project_stat(p: Project, force=False):
         lines_code += cnt
     p.lines_code = lines_code
     p.save(update_fields=["lines_code"])
+
+    logger.debug('finish calc lines of code')
 
     sql = f''' SELECT
     commit_sha,
@@ -124,6 +129,8 @@ def get_a_project_stat(p: Project, force=False):
     p.save(update_fields=['first_commit_id', 'first_commit_at',
                           'last_commit_id', 'last_commit_at',
                           'age', 'commits_count', 'active_days'])
+
+    logger.debug('finish calc general data')
 
     ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
     # activity_data = data['activity']
@@ -178,6 +185,8 @@ def get_a_project_stat(p: Project, force=False):
     ac.yearly_activity = yearly_activity
     ac.save()
 
+    logger.debug('finish calc activity data')
+
     ### authors stat (insertions, deletions, commits_count, active_days_count ...)
     # author_data = data['authors']
 
@@ -228,6 +237,8 @@ def get_a_project_stat(p: Project, force=False):
         dev.save()
         dev.add_a_project(p)
 
+    logger.debug('finish calc dev data')
+
     # save user daily commits count df
     # should be calculated in local timezones
     df = repo.whole_history_df
@@ -259,6 +270,8 @@ def get_a_project_stat(p: Project, force=False):
     # calculate authors' activities, most used languages, contributions
     emails  = daily_stats['author_email'].unique().tolist()
     calculate_authors_data(emails, daily_commits_db, p)
+
+    logger.debug('finish calc authors dailiy data')
 
 # def create_author_daily_commits_table(db):
 #     with duckdb.connect(db) as con:
@@ -370,41 +383,35 @@ def gen_whole_history_df(p, db, replace=False):
     else:
         last_seen_commit_obj = None
 
-    # Retrieve the Git log incrementally
-    new_commit_hashes = []
-    for commit in repo.walk(repo.head.target, pygit2.GIT_SORT_TOPOLOGICAL):
-        if last_seen_commit_obj and commit.id == last_seen_commit_obj.id:
-            break
-        new_commit_hashes.append(str(commit.id))
+    res = gen_commit_record(p.repo_path, since_commit=last_seen_commit_obj,
+                            exclude_patterns=p.get_ignore_list())
+    records = []
+    activities = []
+    for e in res:
+        if not e['is_merge_commit']:
+            author_datetime = timestamp_to_dt(e['author_timestamp'], e['author_tz_offset'])
+            activities.append(ProjectActivity(
+                project=p,
+                commit_sha=e['commit_sha'],
+                commit_message=e['commit_msg'].strip(),
+                author_name=e['author_name'],
+                author_email=e['author_email'],
+                author_datetime=author_datetime,
+                details=e['details'],
+                insertions=e['insertions'],
+                deletions=e['deletions'],
+                corrected_insertions=e['corrected_insertions'],
+                corrected_deletions=e['corrected_deletions'],
+            ))
 
-    if new_commit_hashes:
-        records = []
-        activities = []
-        for cid in new_commit_hashes[::-1]:
-            commit = repo.get(cid)
-            e = gen_commit_record(repo, commit, p.get_ignore_list())
-            if not e['is_merge_commit']:
-                author_datetime = timestamp_to_dt(e['author_timestamp'], e['author_tz_offset'])
-                activities.append(ProjectActivity(
-                    project=p,
-                    commit_sha=e['commit_sha'],
-                    commit_message=e['commit_msg'].strip(),
-                    author_name=e['author_name'],
-                    author_email=e['author_email'],
-                    author_datetime=author_datetime,
-                    details=e['details'],
-                    insertions=e['insertions'],
-                    deletions=e['deletions'],
-                    corrected_insertions=e['corrected_insertions'],
-                    corrected_deletions=e['corrected_deletions'],
-                ))
+        del e['commit_msg']
+        del e['details']
+        records.append(e)
 
-            del e['commit_msg']
-            del e['details']
-            records.append(e)
-
+    if activities:
         ProjectActivity.objects.bulk_create(activities, batch_size=999, ignore_conflicts=True)
 
+    if records:
         df = pd.DataFrame(records)
         df['author_name'] = pd.Categorical(df['author_name'])
         df['author_email'] = pd.Categorical(df['author_email'])

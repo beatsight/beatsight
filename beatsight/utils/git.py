@@ -9,6 +9,7 @@ import logging
 import subprocess
 import os
 import shutil
+import tempfile
 
 from django.conf import settings
 # import pygit2
@@ -203,3 +204,37 @@ def update_remote_url(repo_path, repo_url):
         logger.error("{repo_path} Error updating remote URL:", result.stderr.strip())
 
     os.chdir(old_cwd)
+
+
+def log_num_stat(repo_path, since_commit=None):
+    # Change directory to the cloned repository
+    old_cwd = os.getcwd()
+    os.chdir(repo_path)
+
+    # Create a temporary file to store the git log output
+    with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.txt', dir='/tmp') as temp_file:
+        temp_file_path = temp_file.name
+
+        # Construct the git log command
+        git_log_command = [
+            "git", "log", "--numstat",
+            "--pretty=format:--%H--%ad--%aN--%ae--%s--%P",
+            "--date=iso-strict"
+        ]
+
+        # If a since_commit is provided, add the --since option
+        if since_commit:
+            git_log_command.extend([f'{since_commit}...HEAD'])
+
+        # Run the git log command and write output to the temporary file
+        try:
+            subprocess.run(git_log_command, stdout=temp_file, check=True)
+            logger.debug(f"Git log has been saved to {temp_file_path}.")
+        except subprocess.CalledProcessError as e:
+            logger.exception(f"An error occurred while running git log: {e}")
+        finally:
+            # Change back to the original directory
+            os.chdir(old_cwd)
+
+    # Return the path to the temporary file
+    return temp_file_path

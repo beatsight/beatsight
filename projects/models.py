@@ -198,19 +198,13 @@ class ProjectActivitySerializer(S.ModelSerializer):
                 if len(v) == 1:
                     ret.append(f'{action} {v[0]}')
                 else:
-                    # ret.append(f'{action} {v[0]} 等 {len(v)} 个文件')
-                    # ret.append(f'{action} {v[0]} and {len(v)} other files')
                     ret.append(_('{} {} and {} other files').format(action, v[0], len(v) - 1))
             elif isinstance(v[0], dict):
-                if k == 'R':
-                    val = v[0]['old_file_path'] + ' -> ' + v[0]['file_path']
-                else:
-                    val = v[0]['file_path']
+                val = v[0]['file_path']
 
                 if len(v) == 1:
                     ret.append(f"{action} {val}")
                 else:
-                    # ret.append(f"{action} {val} and {len(v)} other files")
                     ret.append(_('{} {} and {} other files').format(action, val, len(v) - 1))
             else:
                 assert False, 'invalid value type'
