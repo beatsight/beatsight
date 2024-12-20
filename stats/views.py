@@ -53,12 +53,10 @@ def get_a_project_stat(p: Project, force=False):
     repo = GitRepository(p.repo_path, whole_history_df=whole_history_df)
 
     # save current commit as last stat commit
-    p.refresh_from_db()
     p.last_stat_commit = p.head_commit
-    p.save()
-
-    ### general data
     p.files_count = repo.head.files_count
+    p.save(update_fields=["last_stat_commit", "files_count"])
+
     ext_df = repo.head.files_extensions_summary
     lang_cnt = defaultdict(int)
     for index, row in ext_df[~ext_df['is_binary']].iterrows():
@@ -68,6 +66,7 @@ def get_a_project_stat(p: Project, force=False):
         lines_count = row['lines_count']
         lang_cnt[PL_EXT[extension]] += lines_count
 
+    lines_code = 0
     for lang, cnt in lang_cnt.items():
         try:
             lang_obj = Language.objects.get(name=lang)
@@ -81,6 +80,9 @@ def get_a_project_stat(p: Project, force=False):
             proj_lang = ProjectLanguage(project=p, language=lang_obj)
         proj_lang.lines_count = cnt
         proj_lang.save()
+        lines_code += cnt
+    p.lines_code = lines_code
+    p.save(update_fields=["lines_code"])
 
     sql = f''' SELECT
     commit_sha,
@@ -106,6 +108,7 @@ def get_a_project_stat(p: Project, force=False):
     '''
     res = fetch_from_duckdb(sql, db)
     assert len(res) == 1
+
     p.last_commit_id, p.last_commit_at = res[0][0], timezone.make_aware(datetime.fromtimestamp(res[0][1]))
     p.age = (p.last_commit_at - p.first_commit_at).days + 1
 
@@ -118,8 +121,9 @@ def get_a_project_stat(p: Project, force=False):
     res = fetch_from_duckdb(sql, db)
     assert len(res) == 1
     p.commits_count, p.active_days = res[0]
-    p.save()
-    p.refresh_from_db()
+    p.save(update_fields=['first_commit_id', 'first_commit_at',
+                          'last_commit_id', 'last_commit_at',
+                          'age', 'commits_count', 'active_days'])
 
     ### activity stata (past year activity, month_in_year/weekday/hourly activiy )
     # activity_data = data['activity']

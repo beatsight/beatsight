@@ -65,6 +65,7 @@ class Project(TimestampedModel):
     age = models.IntegerField(default=0)
     active_days_ratio = models.FloatField(default=0, db_index=True)
     files_count = models.IntegerField(default=0, db_index=True)
+    lines_code = models.BigIntegerField(default=0, db_index=True)
     commits_count = models.IntegerField(default=0)
     first_commit_id = models.CharField(max_length=50, default='')
     last_commit_id = models.CharField(max_length=50, default='')
