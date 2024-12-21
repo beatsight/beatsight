@@ -33,31 +33,25 @@ You can try out Beatsight on our demo site: [Beatsight Demo](https://demo.beatsi
 
 - Intuitively compare and export development activity data for multiple projects and developers, including commit count, code changes, and other key metrics, to comprehensively analyze contributions.
 
-## Contributing
+## Installation, Upgrades and Documentation
 
-Bug reports and feature requests as well as pull requests are welcome. To contribute:
+You can find documentation at [https://docs.beatsight.com/](https://docs.beatsight.com/)
 
-1. Fork the repository
+Here are some useful quick links:
 
-2. Create a new branch (git checkout -b feature-branch)
+- [Quick Start](https://docs.beatsight.com/en/quick-start/)
 
-3. Make your changes
-
-4. Commit your changes (git commit -am 'Add new feature')
-
-5. Push to the branch (git push origin feature-branch)
-
-6. Create a new pull request
+- [Release and Upgrades](https://docs.beatsight.com/en/upgrade/)
 
 
 ## Development
 
-To run Beatsight in development mode, follow these steps:
+Bug reports and feature requests as well as pull requests are welcome. To run Beatsight in development mode, follow these steps:
 
 1. Clone the repositories:
 
    ```bash
-   git clone https://github.com/beatsight/beatsight.git
+   git clone  --recurse-submodules https://github.com/beatsight/beatsight.git
    git clone https://github.com/beatsight/beatsight-web.git
    ```
 

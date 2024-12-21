@@ -32,6 +32,30 @@ Beatsight 使团队和组织能够深入了解开发活动，便于管理和优�
 
 - 直观对比和导出多个项目和开发者的开发活动数据，包括提交次数、代码修改量等关键指标，全面分析贡献情况。
 
+## 安装、升级和文档
+
+您可以在 [https://docs.beatsight.com/](https://docs.beatsight.com/) 找到文档。
+
+以下是一些有用的快捷链接：
+
+- [快速开始](https://docs.beatsight.com/zh/quick-start/)
+
+- [发布和升级](https://docs.beatsight.com/zh/upgrade/)
+
+
 ## 开发
 
-请参考 [英文文档](README.md)
+欢迎提交 bug 报告和功能请求，具体请参考 [英文文档](README.md)。
+
+
+## 许可证
+
+Beatsight 授权采用 GNU 通用公共许可证 v3.0（GPL v3）。更多详情请参见 [LICENSE](LICENSE) 文件。
+
+本项目包含来自 [repostat](https://github.com/vifactor/repostat) 的组件，授权采用 GNU 通用公共许可证 v3.0。详情请参见 [licenses/LICENSE-repostat](licenses/LICENSE-repostat)。
+
+## 版权 (C) 2024-2025 Beatsight Ltd.
+
+版权所有。
+
+本项目的部分代码源自 repostat，授权采用 GNU 通用公共许可证 v3.0。
