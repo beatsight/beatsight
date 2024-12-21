@@ -217,14 +217,14 @@ def log_num_stat(repo_path, since_commit=None):
 
         # Construct the git log command
         git_log_command = [
-            "git", "log", "--numstat",
+            "git", "log", "--reverse", "--numstat",
             "--pretty=format:--%H--%ad--%aN--%ae--%s--%P",
             "--date=iso-strict"
         ]
 
         # If a since_commit is provided, add the --since option
         if since_commit:
-            git_log_command.extend([f'{since_commit}...HEAD'])
+            git_log_command.extend([f'{since_commit.id}...HEAD'])
 
         # Run the git log command and write output to the temporary file
         try:
