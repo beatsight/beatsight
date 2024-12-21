@@ -26,7 +26,7 @@ services:
     container_name: ${APP_NAME:-beatsight_dev}
     build:
       context: ..
-      dockerfile: docker/Dockerfile-dev
+      dockerfile: docker/dev.Dockerfile
     image: beatsight:dev
     entrypoint: ["tail", "-f", "/dev/null"]
     # entrypoint: ["make", "run"]

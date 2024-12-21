@@ -20,6 +20,7 @@ PL_EXT = {
     'cpp': 'C++',
     'cc': 'C++',
     'dart': 'Dart',
+    'dockerfile': 'Dockerfile',
     'erl': 'Erlang',
     'es': 'JavaScript',
     'es6': 'JavaScript',
