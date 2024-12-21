@@ -262,6 +262,6 @@ class DetailSerializer(SimpleSerializer):
 
     def get_languages(self, obj):
         ret = []
-        for e in ProjectLanguage.objects.filter(project=obj)[:5]:
+        for e in ProjectLanguage.objects.filter(project=obj):
             ret.append(ProjectLanguageSerializer(e).data)
         return ret

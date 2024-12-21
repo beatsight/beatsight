@@ -114,6 +114,7 @@ def parse_git_log(file_path, exclude_patterns=[]):
                     # Extract file extension and add to the set
                     if '.' in file_path:
                         file_ext = file_path.split('.')[-1].lower()  # Convert extension to lowercase
+                        file_ext = file_ext.rstrip('}')
                         current_commit['file_exts'].add(file_ext)
 
         # Append the last commit
